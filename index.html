@@ -104,7 +104,7 @@ function assetLoaded() {
         canvas.height = 800;
         // Game state global variables
 		let assetsLoaded = 0;
-		let totalAssets = 7; // enemyImage, shootingEnemyImage, circularEnemyImage, powerupImage, bossImage, playerImage, backgroundMusic
+		let totalAssets = 8; // enemyImage, shootingEnemyImage, circularEnemyImage, powerupImage, bossImage, playerImage, spinnerEnemyImage, backgroundMusic
 		let isLoading = true;
 		let backgroundMusic = null;
 		let powerupActive = false;
@@ -126,7 +126,7 @@ function assetLoaded() {
 		let regularEnemiesDisabled = false;
 		let boss = null;
 		let lastBossMissile = 0;
-		const bossMissileDelay = 10000; // 10 seconds
+		const bossMissileDelay = 5000; // 10 seconds
 // Add this function to properly initialize loading
 function startLoading() {
     // Hide start screen initially
@@ -148,6 +148,8 @@ function loadAllAssets() {
     window.shootingEnemyImage.onerror = assetLoaded;
     window.circularEnemyImage.onload = assetLoaded;
     window.circularEnemyImage.onerror = assetLoaded;
+	window.spinnerEnemyImage.onload = assetLoaded;
+	window.spinnerEnemyImage.onerror = assetLoaded;
     window.powerupImage.onload = assetLoaded;
     window.powerupImage.onerror = assetLoaded;
     window.bossImage.onload = assetLoaded;
@@ -170,6 +172,7 @@ function loadAllAssets() {
     window.enemyImage.src = 'punatahti.png';
     window.shootingEnemyImage.src = 'sinitahti.png';
     window.circularEnemyImage.src = 'vihertahti.png';
+	window.spinnerEnemyImage.src = 'keltatahti.png';
     window.powerupImage.src = 'powerup1.png';
     window.bossImage.src = 'boss.png';
     window.playerImage.src = 'luke.png';
@@ -188,16 +191,20 @@ function loadAllAssets() {
 
 // Add this at the end of your script block
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded, initializing game...");
     // Initialize image objects first
     window.enemyImage = new Image();
     window.shootingEnemyImage = new Image();
     window.circularEnemyImage = new Image();
+    window.spinnerEnemyImage = new Image();
     window.powerupImage = new Image();
     window.bossImage = new Image();
     window.playerImage = new Image();
     
-    // Start game initialization after DOM is loaded
-    startLoading();
+    // Set initial display for screens
+    gameStats.style.display = 'none';
+    gameOverScreen.style.display = 'none';
+    startScreen.style.display = 'none'; // Hide initially until loading
     
     // Add these lines to ensure the button listeners are properly attached
     startButton.addEventListener('click', function() {
@@ -205,6 +212,9 @@ document.addEventListener('DOMContentLoaded', function() {
         startGame();
     });
     restartButton.addEventListener('click', restartGame);
+	
+	// Start loading assets
+	startLoading();
 });
 
 
@@ -362,11 +372,11 @@ function initializeMusic() {
 				indicator.remove();
 			}
             
-            gameStats.style.display = 'block';
             scoreElement.textContent = score;
             hpElement.textContent = player.hp;
             
             gameLoop = requestAnimationFrame(update);
+			gameStats.style.display = 'block'; //
         }
         function restartGame() {
             isGameRunning = true;
@@ -409,13 +419,13 @@ function initializeMusic() {
 		function spawnBoss() {
 			bossSpawned = true;
 			regularEnemiesDisabled = true;
-			
+			lastBossMissile = Date.now();
 			boss = {
 				x: canvas.width / 2,
 				y: 100,
-				width: 60,
-				height: 60,
-				hp: 200,
+				width: 75,
+				height: 75,
+				hp: 220,
 				maxHp: 200,
 				lastShot: 0,
 				shootingDelay: 1000, // 1 second
@@ -460,7 +470,7 @@ function initializeMusic() {
 					hp: 6,
 					speed: 0.7,
 					isMissile: true,
-					points: 50
+					points: 20
 				};
 				enemies.push(missile);
 				lastBossMissile = now;
@@ -695,17 +705,6 @@ function updatePowerup() {
         powerupBulletsLeft = 300;
         powerup = null;
         
-        // Update UI to show "R" indicator
-        const powerupIndicator = document.createElement('div');
-        powerupIndicator.id = 'powerupIndicator';
-        powerupIndicator.style.color = 'yellow';
-        powerupIndicator.style.fontWeight = 'bold';
-        powerupIndicator.style.fontSize = '20px';
-        powerupIndicator.style.position = 'absolute';
-        powerupIndicator.style.top = '40px';
-        powerupIndicator.style.left = '10px';
-        powerupIndicator.textContent = 'R: ' + powerupBulletsLeft;
-        gameStats.appendChild(powerupIndicator);
     }
     
     // Remove if offscreen
@@ -745,21 +744,11 @@ function drawPowerup() {
 			if (powerupActive) {
 				powerupBulletsLeft--;
 				
-				// Update the counter display
-				const indicator = document.getElementById('powerupIndicator');
-				if (indicator) {
-					indicator.textContent = 'R: ' + powerupBulletsLeft;
-				}
 				
 				// End powerup if bullets are used up
 				if (powerupBulletsLeft <= 0) {
 					powerupActive = false;
 					
-					// Remove the indicator
-					const indicator = document.getElementById('powerupIndicator');
-					if (indicator) {
-						indicator.remove();
-					}
 				}
 			}
 		}
@@ -843,30 +832,34 @@ function updateBullets() {
         }
     }
 }
-        function updateEnemyBullets() {
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                const bullet = enemyBullets[i];
-                bullet.y += bullet.speed;
-                
-                if (bullet.y > canvas.height) {
-                    enemyBullets.splice(i, 1);
-                    continue;
-                }
-                if (checkCollision(bullet, {
-                    x: player.x - player.size/2,
-                    y: player.y - player.size/2,
-                    width: player.size,
-                    height: player.size
-                })) {
-                    player.hp -= 5;
-                    hpElement.textContent = player.hp;
-                    enemyBullets.splice(i, 1);
-                    if (player.hp <= 0) {
-                        endGame();
-                    }
-                }
+function updateEnemyBullets() {
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        const bullet = enemyBullets[i];
+        bullet.y += bullet.speed;
+        
+        if (bullet.y > canvas.height) {
+            enemyBullets.splice(i, 1);
+            continue;
+        }
+        
+        // Check player collision with bullet
+        if (checkCollision(bullet, {
+            x: player.x - player.size/2,
+            y: player.y - player.size/2,
+            width: player.size,
+            height: player.size
+        })) {
+            player.hp -= 5; // Bullet damage
+            hpElement.textContent = player.hp;
+            enemyBullets.splice(i, 1);
+            
+            if (player.hp <= 0) {
+                endGame();
             }
         }
+    }
+}
+ 
 		function updateExplosion() {
     if (!explosionAnimation) return;
     
@@ -900,10 +893,11 @@ function updateBullets() {
     
     // Create a pulsing effect for added intensity
     const pulse = Math.sin(progress * 10) * 0.1 * (1 - progress) + 1;
-    
-    // First draw a bright white center
+	
+    // Draw the explosion in a layer above everything else
+    // First draw a bright white center that covers the entire screen
     ctx.fillStyle = `rgba(255, 255, 255, ${brightness * pulse})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height); // Cover the entire screen
+    ctx.fillRect(0, 0, canvas.width, canvas.height); // Cover the entire screen	
     
     // Then draw the expanding circle with a glow
     const gradient = ctx.createRadialGradient(
@@ -948,9 +942,29 @@ function updateBullets() {
     }
 }
         function updateEnemies() {
-             // Only spawn regular enemies if boss isn't active and not disabled
+			// Only spawn regular enemies if boss isn't active and not disabled
 			if (!regularEnemiesDisabled && enemies.length < 5 && Math.random() < 0.02) {
-				spawnEnemy();
+				// Check if game time is past 1 minute (60 seconds) and add chance for spinner
+				if (gameTime >= 60 && Math.random() < 0.2) { // 20% chance to spawn spinner instead of regular enemy
+					// Spawn spinner enemy
+					const spinnerEnemy = {
+						x: Math.random() * (canvas.width - 30) + 15,
+						y: 30, // Slightly below the top
+						width: 25,
+						height: 25,
+						hp: 12, // Tougher than regular enemies
+						speed: 6, // Fast when launched
+						points: 50, // Worth more points
+						isSpinner: true,
+						spinTimer: Date.now(),
+						spinDuration: 3000, // 3 seconds of spinning
+						angle: 0, // Current rotation angle
+						launched: false
+					};
+					enemies.push(spinnerEnemy);
+				} else {
+					spawnEnemy();
+				}
 			}
 			
 			updateCircularGroup();
@@ -958,33 +972,76 @@ function updateBullets() {
 			for (let i = enemies.length - 1; i >= 0; i--) {
 				const enemy = enemies[i];
 				
-				if (enemy.isMissile) {
-					// Calculate direction to player
+				if (enemy.isSpinner) {
+					// Increase rotation angle
+					enemy.angle += 0.1; // Rotation speed
+					
+					// Check if it's time to launch
+					const now = Date.now();
+					if (!enemy.launched && now - enemy.spinTimer >= enemy.spinDuration) {
+						enemy.launched = true;
+						
+						// Calculate direction to player
+						const dx = player.x - enemy.x;
+						const dy = player.y - enemy.y;
+						const distance = Math.sqrt(dx * dx + dy * dy);
+						
+						// Store normalized direction
+						if (distance > 0) {
+							enemy.dirX = dx / distance;
+							enemy.dirY = dy / distance;
+						} else {
+							enemy.dirX = 0;
+							enemy.dirY = 1; // Default downward
+						}
+					}
+					
+					// Move if launched
+					if (enemy.launched) {
+						enemy.x += enemy.dirX * enemy.speed;
+						enemy.y += enemy.dirY * enemy.speed;
+					}
+				}
+				else if (enemy.isMissile) {
+					// Calculate direction to player for homing
 					const dx = player.x - enemy.x;
 					const dy = player.y - enemy.y;
 					const distance = Math.sqrt(dx * dx + dy * dy);
 					
-					// Normalize and apply speed
+					// Update position
 					if (distance > 0) {
 						enemy.x += (dx / distance) * enemy.speed;
 						enemy.y += (dy / distance) * enemy.speed;
+					} else {
+						enemy.y += enemy.speed;
 					}
 				}
+				// Handle regular and shooting enemies
 				else if (!enemy.isCircular) {
 					enemy.y += enemy.speed;
+					
+					// Make shooting enemies shoot
+					if (enemy.isShooting) {
+						enemyShoot(enemy);
+					}
 				}
 				
-				if (enemy.isShooting) {
-					enemyShoot(enemy);
-				}
-				
+				// Check for collision with player for all enemy types
 				if (checkCollision(enemy, {
 					x: player.x - player.size/2,
 					y: player.y - player.size/2,
 					width: player.size,
 					height: player.size
 				})) {
-					player.hp -= enemy.isMissile ? 15 : 10; // Missiles deal more damage
+					// Different damage based on enemy type
+					if (enemy.isSpinner && enemy.launched) {
+						player.hp -= 30; // Spinner deals 30 damage when launched
+					} else if (enemy.isMissile) {
+						player.hp -= 15; // Missiles deal 15 damage
+					} else {
+						player.hp -= 10; // Regular enemies deal 10 damage
+					}
+					
 					enemies.splice(i, 1);
 					if (circularGroup) {
 						circularGroup.members = circularGroup.members.filter(m => m !== enemy);
@@ -995,28 +1052,66 @@ function updateBullets() {
 					continue;
 				}
 				
-				if (!enemy.isCircular && !enemy.isMissile && enemy.y > canvas.height + enemy.height) {
+				// Check if enemy is off-screen
+				if ((!enemy.isCircular && !enemy.isMissile && !enemy.isSpinner && enemy.y > canvas.height + enemy.height) ||
+					(enemy.isSpinner && enemy.launched && (enemy.x < -50 || enemy.x > canvas.width + 50 || enemy.y < -50 || enemy.y > canvas.height + 50))) {
 					enemies.splice(i, 1);
+					if (circularGroup) {
+						circularGroup.members = circularGroup.members.filter(m => m !== enemy);
+					}
 				}
 			}
-        }
-        function drawBullets() {
-            ctx.fillStyle = '#FFF';
-            player.bullets.forEach(bullet => {
-                ctx.fillRect(bullet.x - bullet.width/2, bullet.y, bullet.width, bullet.height);
-            });
-        }
-        function drawEnemyBullets() {
-            ctx.fillStyle = '#FF6B6B';
-            enemyBullets.forEach(bullet => {
-                ctx.fillRect(bullet.x - bullet.width/2, bullet.y, bullet.width, bullet.height);
-            });
-        }
+		}
 
 function drawEnemies() {
     enemies.forEach(enemy => {
-        if (enemy.isMissile) {
+        if (enemy.isSpinner) {
+            // Save context for rotation
+            ctx.save();
+            ctx.translate(enemy.x, enemy.y);
+            ctx.rotate(enemy.angle);
+            
+            // Draw the spinner with the image
+            const size = enemy.width * 2; // Adjust size as needed
+            
+            // Draw the spinning star image
+            ctx.drawImage(window.spinnerEnemyImage, 
+                -size/2, -size/2,
+                size, size);
+            
+            // If not launched yet, add a pulsing effect
+            if (!enemy.launched) {
+                // Pulsing overlay while charging
+                const pulse = Math.sin(Date.now() / 100) * 0.3 + 0.4;
+                ctx.fillStyle = `rgba(255, 255, 0, ${pulse})`;
+                ctx.globalCompositeOperation = 'overlay';
+                ctx.beginPath();
+                ctx.arc(0, 0, size/2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Restore context
+            ctx.restore();
+        }
+        else if (enemy.isMissile) {
             // Draw missile...
+			ctx.fillStyle = '#FF3300';
+            ctx.beginPath();
+            // Missile body
+            ctx.moveTo(enemy.x, enemy.y - enemy.height/2);
+            ctx.lineTo(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+            ctx.lineTo(enemy.x - enemy.width/2, enemy.y + enemy.height/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Fire trail
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.moveTo(enemy.x - enemy.width/4, enemy.y + enemy.height/2);
+            ctx.lineTo(enemy.x, enemy.y + enemy.height);
+            ctx.lineTo(enemy.x + enemy.width/4, enemy.y + enemy.height/2);
+            ctx.closePath();
+            ctx.fill();
         } 
         else if (enemy.isCircular) {
             ctx.drawImage(window.circularEnemyImage,           
@@ -1044,6 +1139,20 @@ function drawEnemies() {
         }
     });
 }
+
+function drawBullets() {
+    ctx.fillStyle = '#FFF';
+    player.bullets.forEach(bullet => {
+        ctx.fillRect(bullet.x - bullet.width/2, bullet.y, bullet.width, bullet.height);
+    });
+}
+
+function drawEnemyBullets() {
+    ctx.fillStyle = '#FF6B6B';
+    enemyBullets.forEach(bullet => {
+        ctx.fillRect(bullet.x - bullet.width/2, bullet.y, bullet.width, bullet.height);
+    });
+}
         function update() {
 			if (isLoading) {
 				showLoadingScreen();
@@ -1058,7 +1167,7 @@ function drawEnemies() {
 			lastTimeCheck = now;
 			gameTime += deltaTime / 1000; // Convert to seconds
 			// Check for boss spawn at 3:30 (210 seconds)
-			if (gameTime >= 210 && !bossSpawned) {
+			if (gameTime >= 189 && !bossSpawned) {
 				spawnBoss();
 			}
 			for (let i = 0; i < powerupMilestones.length; i++) {
@@ -1077,6 +1186,41 @@ updatePowerup();
 			}
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+			// Add enhanced UI elements
+			ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+			ctx.fillRect(0, 0, canvas.width, 40); // Top bar for stats
+
+			// Make score more prominent
+			ctx.fillStyle = '#4CAF50';
+			ctx.font = 'bold 18px Arial';
+			ctx.textAlign = 'left';
+			ctx.fillText(`Score: ${score}`, 10, 25);
+			
+			// Display Powerup status if active
+			if (powerupActive) {
+				ctx.fillStyle = 'yellow';
+				ctx.font = 'bold 18px Arial';
+				ctx.textAlign = 'center';
+				ctx.fillText(`Rapid Fire: ${powerupBulletsLeft}`, canvas.width / 2, 25);
+			}
+
+			// Display HP as a bar
+			const hpBarWidth = 120;
+			const hpBarHeight = 15;
+			const hpPercent = player.hp / player.maxHp;
+
+			// HP Bar background
+			ctx.fillStyle = '#333';
+			ctx.fillRect(canvas.width - hpBarWidth - 10, 15, hpBarWidth, hpBarHeight);
+
+			// HP Bar fill with color based on percentage
+			ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
+			ctx.fillRect(canvas.width - hpBarWidth - 10, 15, hpBarWidth * hpPercent, hpBarHeight);
+
+			// Add separators
+			ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+			ctx.fillRect(canvas.width / 3, 5, 1, 30);
+			ctx.fillRect(canvas.width * 2 / 3, 5, 1, 30);
             // Update and draw background first
             updateStars();
 			// Update and draw boss if it exists
@@ -1084,8 +1228,7 @@ if (boss) {
     updateBoss();
     drawBoss();
 }
-// Update explosion animation
-updateExplosion();
+
             drawStars();
             player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, mouseX));
 			// Add movement bounds for Y axis - keep player in bottom 2/3 of screen
@@ -1115,13 +1258,19 @@ updateExplosion();
             ctx.moveTo(mouseX, player.y - 10);
             ctx.lineTo(mouseX, player.y + 10);
             ctx.stroke();
+			
+			// Update explosion animation
+			if (explosionAnimation) {
+				updateExplosion();
+			}
             gameLoop = requestAnimationFrame(update);
         }
         // Event listeners
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = e.clientX - rect.left;
-        });
+		canvas.addEventListener('mousemove', (e) => {
+			const rect = canvas.getBoundingClientRect();
+			mouseX = e.clientX - rect.left;
+			mouseY = e.clientY - rect.top;
+		});
         canvas.addEventListener('mousedown', () => {
             isMouseDown = true;
         });
@@ -1157,11 +1306,7 @@ updateExplosion();
 			isMouseDown = true;
 		});
         // Initial render
-		canvas.addEventListener('mousemove', (e) => {
-			const rect = canvas.getBoundingClientRect();
-			mouseX = e.clientX - rect.left;
-			mouseY = e.clientY - rect.top;  // Add this line
-		});
+
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
