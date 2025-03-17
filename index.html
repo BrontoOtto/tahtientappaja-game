@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI6</button>
+        <button id="startButton" class="button">TESTI7</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -385,7 +385,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI6...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI7...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -449,17 +449,20 @@ function initializeMusic() {
 
         function updateStars() {
 			stars.forEach(star => {
-				// Move star down
 				star.y += star.speed;
-				
-				// Rotate star
-				star.angle += star.rotationSpeed;
-				
-				// Reset star when it moves off screen
 				if (star.y > canvas.height) {
 					star.y = 0;
 					star.x = Math.random() * canvas.width;
 				}
+			});
+		}
+
+		function drawStars() {
+			ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+			stars.forEach(star => {
+				ctx.beginPath();
+				ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+				ctx.fill();
 			});
 		}
 		
@@ -832,13 +835,13 @@ function startGame() {
             }
         }
         function spawnEnemy() {
-            // Check if it's time to spawn a circular group
-            const now = Date.now();
-            if (!circularGroup && now - lastGroupSpawn >= groupSpawnDelay && gameTime >= 36) {
-                spawnCircularGroup();
-                lastGroupSpawn = now;
-                return;
-            }
+			// Check if it's time to spawn a circular group
+			const now = Date.now();
+			if (!circularGroup && now - lastGroupSpawn >= groupSpawnDelay && gameTime >= 36) {
+				spawnCircularGroup();
+				lastGroupSpawn = now;
+				return;
+			}
 			
 			// Check if game time is past 10 seconds for shooting enemies
 			const canSpawnShootingEnemy = gameTime >= 10;
@@ -846,20 +849,24 @@ function startGame() {
 			// Regular enemy spawn logic - only allow shooting enemies after 10 seconds
 			const isShootingEnemy = canSpawnShootingEnemy && Math.random() < 0.3;
 			
-            const enemy = {
-                x: Math.random() * (canvas.width - 20),
-                y: -20,
-                width: 20,
-                height: 20,
-                speed: isShootingEnemy ? 0.8 : 1.1,
-                hp: isShootingEnemy ? 3 : 2,
-                points: isShootingEnemy ? 20 : 10,
-                isShooting: isShootingEnemy,
-                lastShot: 0,
-                shootingDelay: 2000
-            };
-            enemies.push(enemy);
-        }
+			const enemy = {
+				x: Math.random() * (canvas.width - 20),
+				y: -20,
+				width: 20,
+				height: 20,
+				speed: isShootingEnemy ? 0.8 : 1.1,
+				hp: isShootingEnemy ? 3 : 2,
+				points: isShootingEnemy ? 20 : 10,
+				isShooting: isShootingEnemy,
+				lastShot: 0,
+				shootingDelay: 2000,
+				// Add rotation properties
+				angle: 0,
+				rotationSpeed: (Math.random() * 0.05) + 0.01, // Small random rotation speed
+				hitboxScale: 1.5 // Make hitbox 1.5x larger than visual
+			};
+			enemies.push(enemy);
+		}
 		// Add this function to spawn the powerup
 function spawnPowerup() {
     powerup = {
@@ -1156,6 +1163,10 @@ function updateEnemyBullets() {
 			for (let i = enemies.length - 1; i >= 0; i--) {
 				const enemy = enemies[i];
 				
+				if (!enemy.isSpinner) { // Don't modify spinner enemies since they have their own rotation
+					enemy.angle += enemy.rotationSpeed;
+				}
+				
 				if (enemy.isSpinner) {
 					// Increase rotation angle
 					enemy.angle += 0.1; // Rotation speed
@@ -1298,28 +1309,43 @@ function drawEnemies() {
             ctx.fill();
         } 
         else if (enemy.isCircular) {
+            // Apply rotation for circular enemies
+            ctx.save();
+            ctx.translate(enemy.x, enemy.y);
+            ctx.rotate(enemy.angle);
             ctx.drawImage(window.circularEnemyImage,           
-                enemy.x - enemy.width/2,
-                enemy.y - enemy.height/2,
+                -enemy.width,
+                -enemy.height,
                 enemy.width * 2,
                 enemy.height * 2
             );
+            ctx.restore();
         } 
         else if (enemy.isShooting) {
+            // Apply rotation for shooting enemies
+            ctx.save();
+            ctx.translate(enemy.x, enemy.y);
+            ctx.rotate(enemy.angle);
             ctx.drawImage(window.shootingEnemyImage,
-                enemy.x - enemy.width/2,
-                enemy.y - enemy.height/2,
+                -enemy.width,
+                -enemy.height,
                 enemy.width * 2,
                 enemy.height * 2
             );
+            ctx.restore();
         } 
         else {
+            // Apply rotation for regular enemies
+            ctx.save();
+            ctx.translate(enemy.x, enemy.y);
+            ctx.rotate(enemy.angle);
             ctx.drawImage(window.enemyImage, 
-                enemy.x - enemy.width/2, 
-                enemy.y - enemy.height/2,
+                -enemy.width,
+                -enemy.height,
                 enemy.width * 2,
                 enemy.height * 2
             );
+            ctx.restore();
         }
     });
 }
