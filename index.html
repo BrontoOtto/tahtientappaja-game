@@ -149,15 +149,27 @@ function assetLoaded() {
 		const bossMissileDelay = 5000; // 10 seconds
 // Add this function to properly initialize loading
 function startLoading() {
+    console.log("Starting loading process...");
+    
+    // Make sure the canvas is ready
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
     // Hide start screen initially
     startScreen.style.display = 'none';
+    
+    // Reset loading counter
+    assetsLoaded = 0;
     
     // Show loading screen first
     showLoadingScreen();
     
-    // Start loading assets
-    loadAllAssets();
+    // Start loading assets with a small delay to ensure canvas is ready
+    setTimeout(() => {
+        loadAllAssets();
+    }, 100);
 }
+
 function detectMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
            (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
@@ -294,6 +306,13 @@ function loadAllAssets() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM loaded, initializing game...");
     // Initialize image objects first
+	setTimeout(() => {
+		if (isLoading) {
+			console.log("Loading timeout - forcing game to show start screen");
+			isLoading = false;
+			startScreen.style.display = 'block';
+		}
+	}, 8000); // 8 seconds timeout
     window.enemyImage = new Image();
     window.shootingEnemyImage = new Image();
     window.circularEnemyImage = new Image();
@@ -361,6 +380,8 @@ document.addEventListener('keyup', (e) => {
         }
 
 function showLoadingScreen() {
+	console.log("Drawing loading screen...");
+	
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -379,7 +400,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('Ladataan...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
