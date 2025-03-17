@@ -1665,6 +1665,9 @@ function updatePlayerMovement() {
 				const touchX = touch.clientX - rect.left;
 				const touchY = touch.clientY - rect.top;
 				
+				// Only process joystick touches on the LEFT HALF of the screen
+				if (touchX < canvas.width / 2) {
+				
 				// Check if the touch is on the joystick
 				const joystickDistance = Math.sqrt(
 					Math.pow(touchX - joystick.baseX, 2) + 
@@ -1677,93 +1680,104 @@ function updatePlayerMovement() {
 					joystick.knobY = touchY;
 				}
 				
-				// Check if the touch is on the fire button
-				const fireButtonDistance = Math.sqrt(
-					Math.pow(touchX - fireButton.x, 2) + 
-					Math.pow(touchY - fireButton.y, 2)
-				);
-				
-				if (fireButtonDistance <= fireButton.radius) {
-					fireButton.pressed = true;
-				}
-			}
-		});
-
-		canvas.addEventListener('touchmove', (e) => {
-			e.preventDefault();
-			
-			if (!playerReady) return;
-			
-			const rect = canvas.getBoundingClientRect();
-			
-			for (let i = 0; i < e.touches.length; i++) {
-				const touch = e.touches[i];
-				const touchX = touch.clientX - rect.left;
-				const touchY = touch.clientY - rect.top;
-				
-				// Update joystick position if it was previously activated
-				const joystickDistance = Math.sqrt(
-					Math.pow(touchX - joystick.baseX, 2) + 
-					Math.pow(touchY - joystick.baseY, 2)
-				);
-				
-				if (joystick.active) {
-					if (joystickDistance <= joystick.maxDistance) {
-						joystick.knobX = touchX;
-						joystick.knobY = touchY;
-					} else {
-						// Limit the knob to the maximum distance
-						const angle = Math.atan2(touchY - joystick.baseY, touchX - joystick.baseX);
-						joystick.knobX = joystick.baseX + Math.cos(angle) * joystick.maxDistance;
-						joystick.knobY = joystick.baseY + Math.sin(angle) * joystick.maxDistance;
+				else {
+					// Check if the touch is on the fire button
+					const fireButtonDistance = Math.sqrt(
+						Math.pow(touchX - fireButton.x, 2) + 
+						Math.pow(touchY - fireButton.y, 2)
+					);
+					
+					if (fireButtonDistance <= fireButton.radius) {
+						fireButton.pressed = true;
 					}
 				}
 			}
 		});
 
-		canvas.addEventListener('touchend', (e) => {
-			// Check remaining touches to see if we should reset any controls
-			const rect = canvas.getBoundingClientRect();
-			let joystickStillActive = false;
-			let fireButtonStillPressed = false;
-			
-			for (let i = 0; i < e.touches.length; i++) {
-				const touch = e.touches[i];
-				const touchX = touch.clientX - rect.left;
-				const touchY = touch.clientY - rect.top;
+			canvas.addEventListener('touchmove', (e) => {
+				e.preventDefault();
 				
-				// Check if any remaining touch is on the joystick
-				const joystickDistance = Math.sqrt(
-					Math.pow(touchX - joystick.baseX, 2) + 
-					Math.pow(touchY - joystick.baseY, 2)
-				);
+				if (!playerReady) return;
 				
-				if (joystickDistance <= joystick.radius) {
-					joystickStillActive = true;
+				const rect = canvas.getBoundingClientRect();
+				
+				for (let i = 0; i < e.touches.length; i++) {
+					const touch = e.touches[i];
+					const touchX = touch.clientX - rect.left;
+					const touchY = touch.clientY - rect.top;
+					
+					// Only update joystick for touches on the LEFT side
+					if (touchX < canvas.width / 2) {
+						// Only update if joystick is active
+						if (joystick.active) {
+							if (joystickDistance <= joystick.maxDistance) {
+								joystick.knobX = touchX;
+								joystick.knobY = touchY;
+							} else {
+								// Limit the knob to the maximum distance
+								const angle = Math.atan2(touchY - joystick.baseY, touchX - joystick.baseX);
+								joystick.knobX = joystick.baseX + Math.cos(angle) * joystick.maxDistance;
+								joystick.knobY = joystick.baseY + Math.sin(angle) * joystick.maxDistance;
+							}
+						}
+					}
+					// Only update fire button for touches on the RIGHT side
+					else {
+						// Check if the touch is on or near the fire button
+						const fireButtonDistance = Math.sqrt(
+							Math.pow(touchX - fireButton.x, 2) + 
+							Math.pow(touchY - fireButton.y, 2)
+						);
+						
+						// Update fire button state based on whether the touch is on it
+						if (fireButtonDistance <= fireButton.radius) {
+							fireButton.pressed = true;
+						}
+					}
+				}
+			});
+
+			// Update touchend handler to better track active touches
+			canvas.addEventListener('touchend', (e) => {
+				// Check remaining touches to see if any are still on our controls
+				const rect = canvas.getBoundingClientRect();
+				let joystickStillActive = false;
+				let fireButtonStillPressed = false;
+				
+				// Loop through all ACTIVE touches to see if any are still on our controls
+				for (let i = 0; i < e.touches.length; i++) {
+					const touch = e.touches[i];
+					const touchX = touch.clientX - rect.left;
+					const touchY = touch.clientY - rect.top;
+					
+					// Left side - joystick
+					if (touchX < canvas.width / 2) {
+						joystickStillActive = true;
+					}
+					// Right side - fire button
+					else {
+						const fireButtonDistance = Math.sqrt(
+							Math.pow(touchX - fireButton.x, 2) + 
+							Math.pow(touchY - fireButton.y, 2)
+						);
+						
+						if (fireButtonDistance <= fireButton.radius) {
+							fireButtonStillPressed = true;
+						}
+					}
 				}
 				
-				// Check if any remaining touch is on the fire button
-				const fireButtonDistance = Math.sqrt(
-					Math.pow(touchX - fireButton.x, 2) + 
-					Math.pow(touchY - fireButton.y, 2)
-				);
-				
-				if (fireButtonDistance <= fireButton.radius) {
-					fireButtonStillPressed = true;
+				// Reset controls if no touches remain on them
+				if (!joystickStillActive) {
+					joystick.active = false;
+					joystick.knobX = joystick.baseX;
+					joystick.knobY = joystick.baseY;
 				}
-			}
-			
-			// Reset controls if no touches remain on them
-			if (!joystickStillActive) {
-				joystick.active = false;
-				joystick.knobX = joystick.baseX;
-				joystick.knobY = joystick.baseY;
-			}
-			
-			if (!fireButtonStillPressed) {
-				fireButton.pressed = false;
-			}
-		});
+				
+				if (!fireButtonStillPressed) {
+					fireButton.pressed = false;
+				}
+			});
         // Initial render
 
         ctx.fillStyle = 'black';
