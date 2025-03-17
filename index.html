@@ -59,7 +59,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI12</button>
+        <button id="startButton" class="button">TESTI13</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -79,9 +79,13 @@ function assetLoaded() {
     if (assetsLoaded >= totalAssets) {
         console.log("All assets loaded, showing start screen");
         isLoading = false;
+        // Hide loading screen properly first
         setTimeout(() => {
-            startScreen.style.display = 'block';
-        }, 500); // Small delay to ensure loading screen can finish rendering
+            // Make sure we don't show start screen while still loading
+            if (!isLoading) {
+                startScreen.style.display = 'block';
+            }
+        }, 500);
     }
 }
         const canvas = document.getElementById('gameCanvas');
@@ -184,56 +188,44 @@ function createMobileControls() {
 // Fix the loadAllAssets function to use window.enemyImage references:
 // Replace your loadAllAssets function with this improved version:
 function loadAllAssets() {
-    // Create a timeout safety mechanism with a longer timeout for mobile devices
+    // Reset the counter to make sure we start from 0
+    assetsLoaded = 0;
+    
+    // Create a timeout safety mechanism
     const loadingTimeout = setTimeout(() => {
         console.log("Loading timeout - forcing game to start anyway");
-        while (assetsLoaded < totalAssets) {
-            assetLoaded(); // Force load completion
-        }
-    }, 10000); // 10 second timeout
-    
-    // Use shorter individual timeouts for each asset
-    function setupAssetLoadTimeout(asset, name) {
-        setTimeout(() => {
-            if (!asset.complete) {
-                console.log(`${name} loading timeout - marking as loaded anyway`);
-                assetLoaded();
-            }
-        }, 3000); // 3 second individual timeout
-    }
+        // Force set the exact count rather than incrementing
+        assetsLoaded = totalAssets;
+        showLoadingScreen(); // Update the loading screen one last time
+        isLoading = false;
+        startScreen.style.display = 'block';
+    }, 10000);
     
     // Set up all asset loading with better error handling
-    window.enemyImage.onload = () => { assetLoaded(); };
-    window.enemyImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.enemyImage, "Enemy image");
+    // Using one-time listeners to prevent double-counting
+    window.enemyImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.enemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
-    window.shootingEnemyImage.onload = () => { assetLoaded(); };
-    window.shootingEnemyImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.shootingEnemyImage, "Shooting enemy image");
+    window.shootingEnemyImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.shootingEnemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
-    window.circularEnemyImage.onload = () => { assetLoaded(); };
-    window.circularEnemyImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.circularEnemyImage, "Circular enemy image");
+    window.circularEnemyImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.circularEnemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
-    window.spinnerEnemyImage.onload = () => { assetLoaded(); };
-    window.spinnerEnemyImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.spinnerEnemyImage, "Spinner enemy image");
+    window.spinnerEnemyImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.spinnerEnemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
-    window.powerupImage.onload = () => { assetLoaded(); };
-    window.powerupImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.powerupImage, "Powerup image");
+    window.powerupImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.powerupImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
-    window.bossImage.onload = () => { assetLoaded(); };
-    window.bossImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.bossImage, "Boss image");
+    window.bossImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.bossImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
-    window.playerImage.onload = () => { assetLoaded(); };
-    window.playerImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.playerImage, "Player image");
+    window.playerImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.playerImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
-    window.logoImage.onload = () => { assetLoaded(); };
-    window.logoImage.onerror = () => { assetLoaded(); };
-    setupAssetLoadTimeout(window.logoImage, "Logo image");
+    window.logoImage.onload = function() { assetLoaded(); this.onload = null; };
+    window.logoImage.onerror = function() { assetLoaded(); this.onerror = null; };
     
     // Now set the sources to start loading
     window.enemyImage.src = 'punatahti.png';
@@ -245,33 +237,31 @@ function loadAllAssets() {
     window.playerImage.src = 'luke.png';
     window.logoImage.src = 'LOGO.png';
     
-    // Handle audio loading specially for iOS
-    // On iOS, we'll just mark the audio as loaded immediately
-    // and handle actual loading when user interaction happens
-    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        console.log("iOS device detected, skipping audio preload");
-        assetLoaded(); // Mark audio as loaded without waiting
-    } else {
-        // Normal audio loading for non-iOS
-        try {
-            const tempAudio = new Audio();
-            tempAudio.addEventListener('canplaythrough', assetLoaded, {once: true});
-            tempAudio.addEventListener('error', () => {
-                console.log("Audio preload error - continuing anyway");
-                assetLoaded();
-            }, {once: true});
-            
-            // Add a timeout for audio loading
-            setTimeout(() => {
+    // Audio loading
+    try {
+        const tempAudio = new Audio();
+        tempAudio.addEventListener('canplaythrough', function() {
+            assetLoaded();
+        }, {once: true});
+        
+        tempAudio.addEventListener('error', function() {
+            console.log("Audio preload error - continuing anyway");
+            assetLoaded();
+        }, {once: true});
+        
+        // Add a timeout for audio loading in case neither event fires
+        setTimeout(() => {
+            // Only trigger if this was the last waiting asset
+            if (assetsLoaded === totalAssets - 1) {
                 console.log("Audio timeout - continuing anyway");
                 assetLoaded();
-            }, 2000);
-            
-            tempAudio.src = 'tappaja.mp3';
-        } catch (e) {
-            console.error("Audio preload error:", e);
-            assetLoaded(); // Count as loaded even if it fails
-        }
+            }
+        }, 2000);
+        
+        tempAudio.src = 'tappaja.mp3';
+    } catch (e) {
+        console.error("Audio preload error:", e);
+        assetLoaded(); // Count as loaded even if it fails
     }
 }
 
@@ -366,7 +356,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI12...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI13...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -386,41 +376,44 @@ function showLoadingScreen() {
 }
 
 		// Create a function to initialize and play the music
+// Modify the initializeMusic function
 function initializeMusic() {
-    if (!backgroundMusic) {
-        backgroundMusic = new Audio('');
-		backgroundMusic.src = 'tappaja.mp3';
+    // For iOS, create a new audio element each time to avoid delay
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        backgroundMusic = new Audio('tappaja.mp3'); // Create fresh audio element
         backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.5; // Set volume to 50%
+        backgroundMusic.volume = 0.5;
         
-        // Use the play method
-        try {
-            const playPromise = backgroundMusic.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("Audio autoplay was prevented: ", error);
-                    // Create a Play Music button
-                    const musicButton = document.createElement('button');
-                    musicButton.innerHTML = "Play Music";
-                    musicButton.style.position = "absolute";
-                    musicButton.style.top = "10px";
-                    musicButton.style.right = "10px";
-                    musicButton.style.zIndex = "1000";
-                    musicButton.addEventListener('click', () => {
-                        backgroundMusic.play();
-                        musicButton.remove();
-                    });
-                    document.body.appendChild(musicButton);
-                });
-            }
-        } catch (e) {
-            console.log("Audio error: ", e);
+        // Play immediately - iOS requires this to happen in a user event handler
+        const playPromise = backgroundMusic.play();
+        if (playPromise) {
+            playPromise.catch(e => {
+                console.log("iOS audio play error:", e);
+            });
         }
-    } else if (backgroundMusic.paused) {
-        try {
-            backgroundMusic.play().catch(e => console.log("Could not resume audio: ", e));
-        } catch (e) {
-            console.log("Audio resume error: ", e);
+    } else {
+        // Normal approach for other platforms
+        if (!backgroundMusic) {
+            backgroundMusic = new Audio('tappaja.mp3');
+            backgroundMusic.loop = true;
+            backgroundMusic.volume = 0.5;
+            
+            backgroundMusic.play().catch(e => {
+                console.log("Audio autoplay was prevented:", e);
+                const musicButton = document.createElement('button');
+                musicButton.innerHTML = "Play Music";
+                musicButton.style.position = "absolute";
+                musicButton.style.top = "10px";
+                musicButton.style.right = "10px";
+                musicButton.style.zIndex = "1000";
+                musicButton.addEventListener('click', () => {
+                    backgroundMusic.play();
+                    musicButton.remove();
+                });
+                document.body.appendChild(musicButton);
+            });
+        } else if (backgroundMusic.paused) {
+            backgroundMusic.play().catch(e => console.log("Could not resume audio:", e));
         }
     }
 }
@@ -1372,7 +1365,7 @@ function update() {
     if (isLoading) {
         showLoadingScreen();
         requestAnimationFrame(update);
-        return;
+        return; 
     }
 
     if (!isGameRunning) return;
