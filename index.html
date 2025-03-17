@@ -168,14 +168,16 @@ function detectMobile() {
 }
 function createMobileControls() {
     // Position the joystick in the bottom left
-    joystick.baseX = 100;
-    joystick.baseY = canvas.height - 100;
+    joystick.baseX = 75;
+    joystick.baseY = canvas.height - 75;
     joystick.knobX = joystick.baseX;
     joystick.knobY = joystick.baseY;
+    joystick.maxDistance = 60;
     
     // Position the fire button in the bottom right
     fireButton.x = canvas.width - 80;
     fireButton.y = canvas.height - 80;
+	fireButton.radius = 50;
 }
 
 // Fix the loadAllAssets function to use window.enemyImage references:
@@ -1111,10 +1113,10 @@ function updateEnemyBullets() {
 					const spinnerEnemy = {
 						x: Math.random() * (canvas.width - 30) + 15,
 						y: 60, // Slightly below the top
-						width: 30,
-						height: 30,
+						width: 24,
+						height: 24,
 						hp: 12, // Tougher than regular enemies
-						speed: 5, // Fast when launched
+						speed: 4, // Fast when launched
 						points: 50, // Worth more points
 						isSpinner: true,
 						spinTimer: Date.now(),
@@ -1233,7 +1235,7 @@ function drawEnemies() {
             ctx.rotate(enemy.angle);
             
             // Draw the spinner with the image
-            const size = enemy.width * 3; // Adjust size as needed
+            const size = enemy.width * 2.2; // Adjust size as needed
             
             // Draw the spinning star image
             ctx.drawImage(window.spinnerEnemyImage, 
@@ -1425,7 +1427,7 @@ function update() {
                 // Normalize the vector and apply to player position
                 const length = Math.sqrt(dx * dx + dy * dy);
                 if (length > 0) {
-                    const moveSpeed = 3; // Adjust as needed
+                    const moveSpeed = 5; // Adjust as needed
                     player.x += (dx / length) * moveSpeed;
                     player.y += (dy / length) * moveSpeed;
                 }
