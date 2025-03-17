@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI13</button>
+        <button id="startButton" class="button">TESTI14</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -66,6 +66,39 @@
         <button id="restartButton" class="button">Restart Game</button>
     </div>
     <script>
+try {
+  console.log("Script started");
+  
+  // Test canvas access
+  const testCanvas = document.getElementById('gameCanvas');
+  console.log("Canvas found:", testCanvas !== null);
+  
+  if (testCanvas) {
+    const testCtx = testCanvas.getContext('2d');
+    console.log("Canvas context created:", testCtx !== null);
+    
+    // Draw something immediately to test if canvas works
+    testCtx.fillStyle = 'red';
+    testCtx.fillRect(100, 100, 200, 200);
+    console.log("Drew red square on canvas");
+  }
+  
+  // Test button access
+  const testStartButton = document.getElementById('startButton');
+  console.log("Start button found:", testStartButton !== null);
+  
+  // Add immediate event listener
+  if (testStartButton) {
+    testStartButton.addEventListener('click', function() {
+      console.log("Start button clicked directly");
+      alert("Button works!");
+    });
+    console.log("Added direct event listener to start button");
+  }
+} catch (e) {
+  console.error("Initialization error:", e);
+  alert("Error initializing game: " + e.message);
+}
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
@@ -401,7 +434,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI13...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI14...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
