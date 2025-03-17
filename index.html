@@ -35,14 +35,6 @@
             cursor: pointer;
             font-size: 18px;
         }
-        #gameStats {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            color: white;
-            z-index: 100;
-            display: none;
-        }
         #gameOverScreen {
             display: none;
             z-index: 200;
@@ -52,7 +44,7 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     
-    <div id="gameStats" style="display:none;">
+    <div id="gameStats">
         <div>Score: <span id="score">0</span></div>
         <div>HP: <span id="hp">100</span></div>
     </div>
