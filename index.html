@@ -63,19 +63,21 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     
-    <div id="gameStats" style="display:none; visibility:hidden; opacity:0; position:absolute; left:-9999px;">
-        <div>Score: <span id="score">0</span></div>
-        <div>HP: <span id="hp">100</span></div>
-    </div>
-    <div id="startScreen" class="screen">
-        <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI20</button>
-    </div>
-    <div id="gameOverScreen" class="screen">
-        <h2>Game Over</h2>
-        <p>Final Score: <span id="finalScore">0</span></p>
-        <button id="restartButton" class="button">Restart Game</button>
-    </div>
+	<div id="gameStats" style="display:none;">
+		<div>Score: <span id="score">0</span></div>
+		<div>HP: <span id="hp">100</span></div>
+	</div>
+
+	<div id="startScreen" class="screen">
+		<div id="logoContainer"></div>
+		<button id="startButton" class="button">TESTI22</button>
+	</div>
+
+	<div id="gameOverScreen" class="screen" style="display:none;">
+		<h2>Game Over</h2>
+		<p>Final Score: <span id="finalScore">0</span></p>
+		<button id="restartButton" class="button">Restart Game</button>
+	</div>
     <script>
 // Asset loading handler
 // Modify your assetLoaded function to handle the transition better
@@ -83,54 +85,12 @@ function assetLoaded() {
     assetsLoaded++;
     console.log("Asset loaded. Total: " + assetsLoaded + "/" + totalAssets);
     
-    // If all assets are loaded, prepare the start screen
+    // If all assets are loaded, switch to start screen
     if (assetsLoaded >= totalAssets) {
-        console.log("All assets loaded, preparing start screen");
-        
-        try {
-            // Prepare the logo container - but first check if logo already exists
-            const logoContainer = document.getElementById('logoContainer');
-            if (logoContainer) {
-                // Check if logo already exists
-                const existingLogo = logoContainer.querySelector('img');
-                
-                // Only add logo if it doesn't already exist
-                if (!existingLogo) {
-                    console.log("Adding logo to start screen");
-                    const logoImg = document.createElement('img');
-                    logoImg.src = 'LOGO.png';
-                    logoImg.width = 300;
-                    logoImg.alt = 'Game Logo';
-                    logoImg.style.marginBottom = '20px';
-                    logoContainer.appendChild(logoImg);
-                } else {
-                    console.log("Logo already exists, not adding another");
-                }
-            }
-            
-            // Handle player image similar to logo - check if it exists first
-            const startScreen = document.getElementById('startScreen');
-            const existingPlayerImage = startScreen ? startScreen.querySelector('div[style*="margin: 20px auto"] img') : null;
-            
-            if (!existingPlayerImage && startScreen) {
-				console.log("Adding player image to start screen");
-				const startScreenImage = document.createElement('div');
-				startScreenImage.style.margin = '20px auto';
-				
-				// Set the correct width and height
-				startScreenImage.innerHTML = `<img src="luke.png" width="400" height="400" alt="Player Ship" style="max-width: 100%;">`;
-				
-				// Insert before the start button
-				const startButton = document.getElementById('startButton');
-				if (startButton) {
-					startScreen.insertBefore(startScreenImage, startButton);
-				} else {
-					startScreen.appendChild(startScreenImage);
-				}
-			}
-        } catch (e) {
-            console.error("Error handling start screen elements:", e);
-        }
+        console.log("All assets loaded, switching to start screen");
+        setTimeout(() => {
+            switchScreen("start");
+        }, 500);
     }
 }
         const canvas = document.getElementById('gameCanvas');
@@ -241,58 +201,43 @@ function startLoading() {
 function switchScreen(newScreen) {
     console.log(`Switching from ${currentScreen} to ${newScreen}`);
     
-    // Stop any ongoing animations first
+    // Cancel any loading animation
     if (loadingLoop) {
         cancelAnimationFrame(loadingLoop);
         loadingLoop = null;
-        console.log("Cancelled loading animation");
     }
     
-    // If switching from loading to start, clear the canvas
-    if (currentScreen === "loading" && newScreen === "start") {
-        console.log("Clearing canvas from loading screen");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        isLoading = false;
-    }
+    // Hide all screens
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const gameStats = document.getElementById('gameStats');
     
-    // Hide all screens first
     if (startScreen) startScreen.style.display = 'none';
     if (gameOverScreen) gameOverScreen.style.display = 'none';
     if (gameStats) gameStats.style.display = 'none';
     
-    // Handle specific screen transitions
+    // Show appropriate screen
     if (newScreen === "loading") {
         isLoading = true;
         isGameRunning = false;
         
-        // Start the loading animation on canvas
-        function loadingAnimation() {
-            if (currentScreen === "loading") {
-                showLoadingScreen();
-                loadingLoop = requestAnimationFrame(loadingAnimation);
-            }
-        }
-        loadingLoop = requestAnimationFrame(loadingAnimation);
+        // Start loading animation
+        loadingLoop = requestAnimationFrame(function loadingAnimation() {
+            showLoadingScreen();
+            loadingLoop = requestAnimationFrame(loadingAnimation);
+        });
     } 
     else if (newScreen === "start") {
         isLoading = false;
         isGameRunning = false;
         
-        // Make sure canvas is clear
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Show start screen
         if (startScreen) {
             startScreen.style.display = 'block';
-            console.log("Start screen shown");
         }
     } 
     else if (newScreen === "game") {
         isLoading = false;
         isGameRunning = true;
-        
-        // Clear any loading or start screen elements
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         if (gameStats) {
             gameStats.style.display = 'block';
@@ -430,45 +375,38 @@ document.addEventListener('DOMContentLoaded', function() {
     window.playerImage = new Image();
     window.logoImage = new Image();
     
-    // Set initial screen states with explicit style commands
-    const gameStats = document.getElementById('gameStats');
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const startScreen = document.getElementById('startScreen');
-    
-    if (gameStats) gameStats.style.display = 'none';
-    if (gameOverScreen) gameOverScreen.style.display = 'none';
-    if (startScreen) startScreen.style.display = 'none'; 
-    
-    // Log screen states
-    console.log("Initial screen states:");
-    console.log("- Start screen:", startScreen ? startScreen.style.display : "not found");
-    console.log("- Game stats:", gameStats ? gameStats.style.display : "not found");
-    console.log("- Game over screen:", gameOverScreen ? gameOverScreen.style.display : "not found");
-    
-    // Set up button event listeners
+    // Get references to DOM elements
     const startButton = document.getElementById('startButton');
     const restartButton = document.getElementById('restartButton');
     
+    // Fix start button event listener
     if (startButton) {
-        console.log("Setting up start button listener");
-        startButton.addEventListener('click', function() {
-            console.log("Start button clicked!");
-            startGame();
-        });
+        // Remove any existing listeners first to avoid duplicates
+        startButton.removeEventListener('click', startGame);
+        // Add click listener
+        startButton.addEventListener('click', startGame);
+        console.log("Start button listener added");
     } else {
         console.error("Start button not found!");
     }
     
+    // Restart button
     if (restartButton) {
         restartButton.addEventListener('click', restartGame);
-    } else {
-        console.error("Restart button not found!");
     }
     
-    // Start with the loading screen
-    console.log("Starting loading process");
-    currentScreen = "loading"; // Make sure this is set correctly
+    // Start the loading process
     startLoading();
+	setTimeout(() => {
+		// Failsafe to ensure start button is visible
+		const startButton = document.getElementById('startButton');
+		const startScreen = document.getElementById('startScreen');
+		
+		if (startButton && startScreen && startScreen.style.display === 'block') {
+			startButton.style.display = 'inline-block';
+			console.log("Failsafe: Ensuring start button is visible");
+		}
+	}, 3000); // Check after 3 seconds
 });
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
@@ -533,7 +471,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI22...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -724,25 +662,15 @@ function endGame() {
 		let mouseY = 0;
         let isMouseDown = false;
 function startGame() {
-    console.log("Starting game...");
-    
-    // Clear any pending timeouts that might switch screens
-    if (window.pendingScreenTimeouts) {
-        window.pendingScreenTimeouts.forEach(timeout => clearTimeout(timeout));
-        window.pendingScreenTimeouts = [];
-    }
+    console.log("Start game function called!");
     
     // Switch to game screen
     switchScreen("game");
     
+    // Initialize game - using try/catch for better error handling
     try {
-        // Switch to game screen
-        switchScreen("game");
-        
-        // Only initialize music if it's not already playing
-		if (!isBackgroundMusicPlaying) {
-			initializeMusic();
-		}
+        // Start the background music
+        initializeMusic();
         
         // Reset game state
         score = 0;
@@ -765,7 +693,7 @@ function startGame() {
             createMobileControls();
         }
         
-        // Place player below screen
+        // Reset player
         player.y = canvas.height + 100;
         player.hp = player.maxHp;
         player.bullets = [];
@@ -786,13 +714,8 @@ function startGame() {
         powerup = null;
         powerupSpawned = false;
         reachedMilestones = [false, false, false, false];
-
-        // Remove any existing powerup indicator
-        const indicator = document.getElementById('powerupIndicator');
-        if (indicator) {
-            indicator.remove();
-        }
         
+        // Update UI
         scoreElement.textContent = score;
         hpElement.textContent = player.hp;
         
@@ -2140,6 +2063,33 @@ function updatePlayerMovement() {
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    </script>
+	<script>
+        // Debug helper - fires when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM is now loaded - Elements check:");
+            console.log("- Canvas:", document.getElementById('gameCanvas'));
+            console.log("- Start Screen:", document.getElementById('startScreen'));
+            console.log("- Start Button:", document.getElementById('startButton'));
+            console.log("- Game Stats:", document.getElementById('gameStats'));
+            console.log("- Game Over Screen:", document.getElementById('gameOverScreen'));
+            
+            // Add visible debug info
+            setTimeout(function() {
+                if (!isGameRunning) {
+                    // Add emergency start button if game isn't running
+                    var emergencyBtn = document.createElement('button');
+                    emergencyBtn.textContent = "Emergency Start";
+                    emergencyBtn.style = "position:fixed; top:10px; right:10px; z-index:9999; background:red; color:white; padding:10px;";
+                    emergencyBtn.onclick = function() {
+                        startGame();
+                    };
+                    document.body.appendChild(emergencyBtn);
+                    
+                    console.log("Added emergency start button");
+                }
+            }, 5000);
+        });
     </script>
 </body>
 </html>
