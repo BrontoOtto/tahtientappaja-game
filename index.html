@@ -1427,7 +1427,7 @@ function update() {
                 // Normalize the vector and apply to player position
                 const length = Math.sqrt(dx * dx + dy * dy);
                 if (length > 0) {
-                    const moveSpeed = 5; // Adjust as needed
+                    const moveSpeed = 3; // Adjust as needed
                     player.x += (dx / length) * moveSpeed;
                     player.y += (dy / length) * moveSpeed;
                 }
