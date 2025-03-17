@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI11</button>
+        <button id="startButton" class="button">TESTI12</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -66,6 +66,71 @@
         <button id="restartButton" class="button">Restart Game</button>
     </div>
     <script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const startScreen = document.getElementById('startScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const gameStats = document.getElementById('gameStats');
+const startButton = document.getElementById('startButton');
+const restartButton = document.getElementById('restartButton');
+const scoreElement = document.getElementById('score');
+const hpElement = document.getElementById('hp');
+const finalScoreElement = document.getElementById('finalScore');
+
+// Initialize variables
+let totalAssets = 9;
+let assetsLoaded = 0;
+let isLoading = true;
+let backgroundMusic = null;
+let keys = {};
+let isMobile = false;
+let joystick = {
+    active: false,
+    baseX: 0,
+    baseY: 0,
+    knobX: 0,
+    knobY: 0,
+    radius: 50,
+    knobRadius: 25,
+    maxDistance: 50
+};
+let fireButton = {
+    x: 0,
+    y: 0,
+    radius: 40,
+    pressed: false
+};
+let gameStartSequence = false;
+let playerReady = false;
+let enemySpawningActive = false;
+let playerInvulnerable = false;
+let playerInvulnerableTimer = 0;
+let powerupActive = false;
+let powerupBulletsLeft = 0;
+let powerup = null;
+let powerupSpawned = false;
+let gameLoop;
+let isGameRunning = false;
+let lastShot = 0;
+let score = 0;
+let rapidFireShootingDelay = 83; // 250/3 (shootingDelay/3)
+let gameTime = 0;
+let lastTimeCheck = 0;
+let explosionAnimation = null;
+let bossSpawned = false;
+let regularEnemiesDisabled = false;
+let boss = null;
+let lastBossMissile = 0;
+
+// Initialize image objects
+window.enemyImage = new Image();
+window.shootingEnemyImage = new Image();
+window.circularEnemyImage = new Image();
+window.spinnerEnemyImage = new Image();
+window.powerupImage = new Image();
+window.bossImage = new Image();
+window.playerImage = new Image();
+window.logoImage = new Image();
 	// Asset loading handler
 function assetLoaded() {
     assetsLoaded++;
@@ -322,7 +387,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI11...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI12...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
