@@ -51,9 +51,14 @@
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    
+    <div id="gameStats" style="display:none; visibility:hidden; opacity:0; position:absolute; left:-9999px;">
+        <div>Score: <span id="score">0</span></div>
+        <div>HP: <span id="hp">100</span></div>
+    </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI3</button>
+        <button id="startButton" class="button">TESTI4</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -85,6 +90,8 @@ function assetLoaded() {
 		const gameStats = document.getElementById('gameStats');
 		const startButton = document.getElementById('startButton');
 		const restartButton = document.getElementById('restartButton');
+		const scoreElement = document.getElementById('score');
+		const hpElement = document.getElementById('hp');
 		const finalScoreElement = document.getElementById('finalScore');
 		
 
@@ -376,7 +383,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI2...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI4...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -513,8 +520,9 @@ function startGame() {
     if (indicator) {
         indicator.remove();
     }
-    //MUISTA TAMA PAIKKA
-
+    
+    scoreElement.textContent = score;
+    hpElement.textContent = player.hp;
     
     gameStats.style.display = 'block';
     gameLoop = requestAnimationFrame(update);
@@ -558,6 +566,8 @@ function startGame() {
 			}
 
             
+            scoreElement.textContent = score;
+            hpElement.textContent = player.hp;
             
             gameOverScreen.style.display = 'none';
             gameStats.style.display = 'block';
@@ -974,6 +984,7 @@ function updateBullets() {
                 
                 if (enemy.hp <= 0) {
                     score += enemy.points;
+                    scoreElement.textContent = score;
                     enemies.splice(j, 1);
                     if (circularGroup) {
                         circularGroup.members = circularGroup.members.filter(m => m !== enemy);
@@ -1002,6 +1013,7 @@ function updateEnemyBullets() {
 			height: player.size
 		})) {
             player.hp -= 5; // Bullet damage
+            hpElement.textContent = player.hp;
             enemyBullets.splice(i, 1);
             
             if (player.hp <= 0) {
@@ -1025,6 +1037,7 @@ function updateEnemyBullets() {
             
             // Defeat player when animation completes
             player.hp -= 100;
+            hpElement.textContent = player.hp;
             if (player.hp <= 0) {
                 endGame();
             }
