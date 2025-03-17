@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI12</button>
+        <button id="startButton" class="button">TESTI13</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -131,6 +131,18 @@ window.powerupImage = new Image();
 window.bossImage = new Image();
 window.playerImage = new Image();
 window.logoImage = new Image();
+
+const shootingDelay = 250;
+const reachedMilestones = [false, false, false, false];
+const bossMissileDelay = 5000;
+
+// Set canvas dimensions explicitly
+canvas.width = 400;
+canvas.height = 800;
+
+// Add debugging
+console.log("Canvas dimensions:", canvas.width, canvas.height);
+
 	// Asset loading handler
 function assetLoaded() {
     assetsLoaded++;
@@ -203,6 +215,8 @@ function createMobileControls() {
 // Fix the loadAllAssets function to use window.enemyImage references:
 // Replace your loadAllAssets function with this improved version:
 function loadAllAssets() {
+    console.log("loadAllAssets called");
+    
     // Create a timeout safety mechanism
     const loadingTimeout = setTimeout(() => {
         console.log("Loading timeout - forcing game to start anyway");
@@ -387,7 +401,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI12...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI13...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
