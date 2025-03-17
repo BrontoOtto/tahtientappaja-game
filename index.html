@@ -63,7 +63,7 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     
-	<div id="gameStats" style="display:none;">
+	<div id="gameStats" style="display:none; visibility:hidden; opacity:0; position:absolute; left:-9999px;">
 		<div>Score: <span id="score">0</span></div>
 		<div>HP: <span id="hp">100</span></div>
 	</div>
@@ -88,7 +88,14 @@ function assetLoaded() {
     // If all assets are loaded, switch to start screen
     if (assetsLoaded >= totalAssets) {
         console.log("All assets loaded, switching to start screen");
+        // Stop loading animation
+        if (loadingLoop) {
+            cancelAnimationFrame(loadingLoop);
+            loadingLoop = null;
+        }
+        
         setTimeout(() => {
+            isLoading = false;
             switchScreen("start");
         }, 500);
     }
@@ -219,15 +226,18 @@ function switchScreen(newScreen) {
     
     // Show appropriate screen
     if (newScreen === "loading") {
-        isLoading = true;
-        isGameRunning = false;
-        
-        // Start loading animation
-        loadingLoop = requestAnimationFrame(function loadingAnimation() {
-            showLoadingScreen();
-            loadingLoop = requestAnimationFrame(loadingAnimation);
-        });
-    } 
+		isLoading = true;
+		isGameRunning = false;
+		
+		// Make sure start screen is hidden
+		if (startScreen) startScreen.style.display = 'none';
+		
+		// Start loading animation
+		loadingLoop = requestAnimationFrame(function loadingAnimation() {
+			showLoadingScreen();
+			loadingLoop = requestAnimationFrame(loadingAnimation);
+		});
+	}
     else if (newScreen === "start") {
         isLoading = false;
         isGameRunning = false;
@@ -348,18 +358,19 @@ function loadAllAssets() {
         assetLoaded(); // Count as loaded even if it fails
     }
 	const checkAssetsInterval = setInterval(() => {
-        if (assetsLoaded >= totalAssets) {
-            console.log("All assets loaded via interval check");
-            clearInterval(checkAssetsInterval);
-            
-            // Switch to start screen after a brief delay
-            setTimeout(() => {
-                if (currentScreen === "loading") {
-                    switchScreen("start");
-                }
-            }, 500);
-        }
-    }, 500);
+		if (assetsLoaded >= totalAssets) {
+			console.log("All assets loaded via interval check");
+			clearInterval(checkAssetsInterval);
+			
+			// Switch to start screen after a brief delay
+			setTimeout(() => {
+				if (currentScreen === "loading") {
+					isLoading = false;
+					switchScreen("start");
+				}
+			}, 500);
+		}
+	}, 500);
 }
 
 // Add this at the end of your script block
