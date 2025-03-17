@@ -16,6 +16,7 @@
         }
         #gameCanvas {
             border: 2px solid #333;
+			touch-action: none;
         }
         .screen {
             position: fixed;
@@ -58,7 +59,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI9</button>
+        <button id="startButton" class="button">TESTI10</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -385,7 +386,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI9...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI10...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -491,6 +492,11 @@ function initializeMusic() {
 		let mouseY = 0;
         let isMouseDown = false;
 function startGame() {
+if (backgroundMusic) {
+    backgroundMusic.play().catch(e => {
+        console.log("Audio play error:", e);
+    });
+}
     console.log("Starting game...");
     // Start the background music
     initializeMusic();
@@ -1732,6 +1738,10 @@ function updatePlayerMovement() {
         canvas.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
+		//iOS
+		canvas.addEventListener('gesturestart', function(e) {
+			e.preventDefault();
+		});
 		// Add touch support
 		canvas.addEventListener('touchstart', (e) => {
 			e.preventDefault();
@@ -1772,6 +1782,7 @@ function updatePlayerMovement() {
 					}
 				}
 			}
+		}, { passive: false });
 		});
 
 		canvas.addEventListener('touchmove', (e) => {
