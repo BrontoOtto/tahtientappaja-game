@@ -59,7 +59,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI16</button>
+        <button id="startButton" class="button">TESTI17</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -79,42 +79,22 @@ function assetLoaded() {
         
         // Add the DOM elements for the start screen
         try {
-            // Add player image to start screen
-            const startScreenImage = document.createElement('div');
-            startScreenImage.style.margin = '20px auto';
-            startScreenImage.innerHTML = `<img src="luke.png" width="400" height="400" alt="Player Ship">`;
-            
-            // Add logo to start screen
-            const logoContainer = document.getElementById('logoContainer');
-            if (logoContainer) {
-                // Clear any existing content first
-                logoContainer.innerHTML = '';
-                // Add the logo image
-                const logoImg = document.createElement('img');
-                logoImg.src = 'LOGO.png';
-                logoImg.width = 300;
-                logoImg.alt = 'Game Logo';
-                logoImg.style.marginBottom = '20px';
-                logoContainer.appendChild(logoImg);
-            }
-            
-            // Insert the image before the start button
-            const startButton = document.getElementById('startButton');
-            if (startButton && startButton.parentNode) {
-                // First check if the image is already there
-                const existingImages = startScreen.querySelectorAll('div[style*="margin: 20px auto"]');
-                if (existingImages.length === 0) {
-                    startScreen.insertBefore(startScreenImage, startButton);
-                }
-            }
+            // ... existing code ...
         } catch (e) {
             console.error("Error adding images to start screen:", e);
         }
         
         // Switch to the start screen after a short delay
-        setTimeout(() => {
-            switchScreen("start");
+        if (!window.pendingScreenTimeouts) window.pendingScreenTimeouts = [];
+        
+        const timeoutId = setTimeout(() => {
+            // Only switch if we're not already in game mode
+            if (currentScreen !== "game" && !isGameRunning) {
+                switchScreen("start");
+            }
         }, 500);
+        
+        window.pendingScreenTimeouts.push(timeoutId);
     }
 }
         const canvas = document.getElementById('gameCanvas');
@@ -201,6 +181,12 @@ function startLoading() {
 function switchScreen(newScreen) {
     console.log(`Switching from ${currentScreen} to ${newScreen}`);
     
+    // Prevent switching back to start screen if game is already running
+    if (currentScreen === "game" && newScreen === "start") {
+        console.log("Prevented switching from game to start screen");
+        return;
+    }
+    
     // Hide all screens first
     startScreen.style.display = 'none';
     gameOverScreen.style.display = 'none';
@@ -268,13 +254,22 @@ function loadAllAssets() {
     // Reset the counter to make sure we start from 0
     assetsLoaded = 0;
     
+    if (!window.pendingScreenTimeouts) window.pendingScreenTimeouts = [];
+    
     // Create a timeout safety mechanism
     const loadingTimeout = setTimeout(() => {
         console.log("Loading timeout - forcing game to start anyway");
         // Force set the exact count rather than incrementing
         assetsLoaded = totalAssets;
-        switchScreen("start"); // Force switch to start screen
-    }, 5000); // Reduced timeout to 5 seconds for better user experience
+        showLoadingScreen(); // Update the loading screen one last time
+        
+        // Only switch if we're not already in game mode
+        if (currentScreen !== "game" && !isGameRunning) {
+            switchScreen("start");
+        }
+    }, 10000);
+    
+    window.pendingScreenTimeouts.push(loadingTimeout);
     
     // Simple load function for each image
     function loadImage(img, src) {
@@ -354,6 +349,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Make sure these elements exist before attaching listeners
     const startButton = document.getElementById('startButton');
+    if (startButton) {
+        startButton.removeEventListener('click', startGame); // Remove any existing listener
+        startButton.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent any default action
+            console.log("Start button clicked!");
+            startGame();
+        });
+    }
     const restartButton = document.getElementById('restartButton');
     
     if (startButton) {
@@ -437,7 +440,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI16...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI17...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -547,6 +550,15 @@ function initializeMusic() {
         let isMouseDown = false;
 function startGame() {
     console.log("Starting game...");
+    
+    // Clear any pending timeouts that might switch screens
+    if (window.pendingScreenTimeouts) {
+        window.pendingScreenTimeouts.forEach(timeout => clearTimeout(timeout));
+        window.pendingScreenTimeouts = [];
+    }
+    
+    // Switch to game screen
+    switchScreen("game");
     
     try {
         // Switch to game screen
