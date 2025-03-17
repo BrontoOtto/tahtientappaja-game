@@ -169,14 +169,14 @@ function detectMobile() {
 function createMobileControls() {
     // Position the joystick in the bottom left
     joystick.baseX = 75;
-    joystick.baseY = canvas.height - 75;
+    joystick.baseY = canvas.height - 100;
     joystick.knobX = joystick.baseX;
     joystick.knobY = joystick.baseY;
     joystick.maxDistance = 60;
     
     // Position the fire button in the bottom right
     fireButton.x = canvas.width - 80;
-    fireButton.y = canvas.height - 80;
+    fireButton.y = canvas.height - 100;
 	fireButton.radius = 50;
 }
 
@@ -1587,11 +1587,11 @@ function drawMobileControls() {
 function updatePlayerMovement() {
     if (gameStartSequence && !playerReady) {
         // Intro animation - same as before
-        player.y -= 0.5;
+        player.y = canvas.height + 100;
         player.x = canvas.width / 2;
         
-        if (player.y <= canvas.height - 40) {
-            player.y = canvas.height - 40;
+        if (player.y <= canvas.height - 100) {
+            player.y = canvas.height - 100;
         }
     } else if (playerReady) {
         if (isMobile) {
