@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI8</button>
+        <button id="startButton" class="button">TESTI9</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -385,7 +385,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI8...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI9...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1004,23 +1004,40 @@ function updateBullets() {
         }
         
         // Regular enemy hit check
-        for (let j = enemies.length - 1; j >= 0; j--) {
-            const enemy = enemies[j];
-            if (checkCollision(bullet, enemy)) {
-                enemy.hp--;
-                player.bullets.splice(i, 1);
-                
-                if (enemy.hp <= 0) {
-                    score += enemy.points;
-                    scoreElement.textContent = score;
-                    enemies.splice(j, 1);
-                    if (circularGroup) {
-                        circularGroup.members = circularGroup.members.filter(m => m !== enemy);
-                    }
-                }
-                break;
-            }
-        }
+        // Regular enemy hit check
+		for (let j = enemies.length - 1; j >= 0; j--) {
+			const enemy = enemies[j];
+			
+			// Apply larger hitbox for enemy collision
+			let hitboxWidth = enemy.width;
+			let hitboxHeight = enemy.height;
+			
+			// Apply larger hitbox for non-spinner enemies
+			if (!enemy.isSpinner && !enemy.isMissile) {
+				hitboxWidth *= enemy.hitboxScale || 1.5;
+				hitboxHeight *= enemy.hitboxScale || 1.5;
+			}
+			
+			if (checkCollision(bullet, {
+				x: enemy.x - hitboxWidth/2,
+				y: enemy.y - hitboxHeight/2,
+				width: hitboxWidth,
+				height: hitboxHeight
+			})) {
+				enemy.hp--;
+				player.bullets.splice(i, 1);
+				
+				if (enemy.hp <= 0) {
+					score += enemy.points;
+					scoreElement.textContent = score;
+					enemies.splice(j, 1);
+					if (circularGroup) {
+						circularGroup.members = circularGroup.members.filter(m => m !== enemy);
+					}
+				}
+				break;
+			}
+		}
     }
 }
 function updateEnemyBullets() {
@@ -1228,7 +1245,29 @@ function updateEnemyBullets() {
 					width: player.size,
 					height: player.size
 				})) {
-					// Different damage based on enemy type
+					// Different damage based on enemy type HUOMIO
+					if (!playerInvulnerable) {
+						let hitboxWidth = enemy.width;
+						let hitboxHeight = enemy.height;
+					
+					// Apply larger hitbox for non-spinner enemies
+					if (!enemy.isSpinner && !enemy.isMissile) {
+						hitboxWidth *= enemy.hitboxScale || 1.5;
+						hitboxHeight *= enemy.hitboxScale || 1.5;
+					}
+					
+					if (checkCollision({
+						x: enemy.x - hitboxWidth/2,
+						y: enemy.y - hitboxHeight/2,
+						width: hitboxWidth,
+						height: hitboxHeight
+					}, {
+						x: player.x - player.size/2,
+						y: player.y - player.size/2,
+						width: player.size,
+						height: player.size
+					})) {
+					
 					if (enemy.isSpinner && enemy.launched) {
 						player.hp -= 30; // Spinner deals 30 damage when launched
 					} else if (enemy.isMissile) {
