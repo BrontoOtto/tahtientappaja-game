@@ -59,7 +59,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI15</button>
+        <button id="startButton" class="button">TESTI16</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -67,9 +67,9 @@
         <button id="restartButton" class="button">Restart Game</button>
     </div>
     <script>
-	// Asset loading handler
+// Asset loading handler
 // Modify your assetLoaded function to handle the transition better
-
+function assetLoaded() {
     assetsLoaded++;
     console.log("Asset loaded. Total: " + assetsLoaded + "/" + totalAssets);
     
@@ -273,48 +273,34 @@ function loadAllAssets() {
         console.log("Loading timeout - forcing game to start anyway");
         // Force set the exact count rather than incrementing
         assetsLoaded = totalAssets;
-        showLoadingScreen(); // Update the loading screen one last time
-        isLoading = false;
-        startScreen.style.display = 'block';
-    }, 10000);
+        switchScreen("start"); // Force switch to start screen
+    }, 5000); // Reduced timeout to 5 seconds for better user experience
     
-    // Set up all asset loading with better error handling
-    // Using one-time listeners to prevent double-counting
-    window.enemyImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.enemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
+    // Simple load function for each image
+    function loadImage(img, src) {
+        img.onload = function() { 
+            assetLoaded(); 
+            this.onload = null; 
+        };
+        img.onerror = function() { 
+            console.error("Failed to load image:", src);
+            assetLoaded(); 
+            this.onerror = null; 
+        };
+        img.src = src;
+    }
     
-    window.shootingEnemyImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.shootingEnemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
+    // Load all images
+    loadImage(window.enemyImage, 'punatahti.png');
+    loadImage(window.shootingEnemyImage, 'sinitahti.png');
+    loadImage(window.circularEnemyImage, 'vihertahti.png');
+    loadImage(window.spinnerEnemyImage, 'keltatahti.png');
+    loadImage(window.powerupImage, 'powerup1.png');
+    loadImage(window.bossImage, 'boss.png');
+    loadImage(window.playerImage, 'luke.png');
+    loadImage(window.logoImage, 'LOGO.png');
     
-    window.circularEnemyImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.circularEnemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
-    
-    window.spinnerEnemyImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.spinnerEnemyImage.onerror = function() { assetLoaded(); this.onerror = null; };
-    
-    window.powerupImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.powerupImage.onerror = function() { assetLoaded(); this.onerror = null; };
-    
-    window.bossImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.bossImage.onerror = function() { assetLoaded(); this.onerror = null; };
-    
-    window.playerImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.playerImage.onerror = function() { assetLoaded(); this.onerror = null; };
-    
-    window.logoImage.onload = function() { assetLoaded(); this.onload = null; };
-    window.logoImage.onerror = function() { assetLoaded(); this.onerror = null; };
-    
-    // Now set the sources to start loading
-    window.enemyImage.src = 'punatahti.png';
-    window.shootingEnemyImage.src = 'sinitahti.png';
-    window.circularEnemyImage.src = 'vihertahti.png';
-    window.spinnerEnemyImage.src = 'keltatahti.png';
-    window.powerupImage.src = 'powerup1.png';
-    window.bossImage.src = 'boss.png';
-    window.playerImage.src = 'luke.png';
-    window.logoImage.src = 'LOGO.png';
-    
-    // Audio loading
+    // Audio loading with simplified approach
     try {
         const tempAudio = new Audio();
         tempAudio.addEventListener('canplaythrough', function() {
@@ -326,9 +312,8 @@ function loadAllAssets() {
             assetLoaded();
         }, {once: true});
         
-        // Add a timeout for audio loading in case neither event fires
+        // Shorter timeout for audio
         setTimeout(() => {
-            // Only trigger if this was the last waiting asset
             if (assetsLoaded === totalAssets - 1) {
                 console.log("Audio timeout - continuing anyway");
                 assetLoaded();
@@ -344,6 +329,13 @@ function loadAllAssets() {
 
 // Add this at the end of your script block
 document.addEventListener('DOMContentLoaded', function() {
+	// Add to your DOMContentLoaded event
+	setTimeout(() => {
+		if (!isGameRunning && currentScreen !== "gameOver") {
+			console.log("Game failed to start automatically, forcing start screen");
+			switchScreen("start");
+		}
+	}, 10000); // 10 second failsafe
     console.log("DOM loaded, initializing game...");
     // Initialize image objects first
     window.enemyImage = new Image();
@@ -353,22 +345,34 @@ document.addEventListener('DOMContentLoaded', function() {
     window.powerupImage = new Image();
     window.bossImage = new Image();
     window.playerImage = new Image();
-	window.logoImage = new Image();
+    window.logoImage = new Image();
     
     // Set initial display for screens
     gameStats.style.display = 'none';
     gameOverScreen.style.display = 'none';
     startScreen.style.display = 'none'; // Hide initially until loading
     
-    // Add these lines to ensure the button listeners are properly attached
-    startButton.addEventListener('click', function() {
-        console.log("Start button clicked!");
-        startGame();
-    });
-    restartButton.addEventListener('click', restartGame);
-	
-	// Start loading assets
-	startLoading();
+    // Make sure these elements exist before attaching listeners
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    
+    if (startButton) {
+        startButton.addEventListener('click', function() {
+            console.log("Start button clicked!");
+            startGame();
+        });
+    } else {
+        console.error("Start button not found!");
+    }
+    
+    if (restartButton) {
+        restartButton.addEventListener('click', restartGame);
+    } else {
+        console.error("Restart button not found!");
+    }
+    
+    // Start loading assets
+    startLoading();
 });
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
@@ -433,7 +437,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI15...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI16...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -544,75 +548,81 @@ function initializeMusic() {
 function startGame() {
     console.log("Starting game...");
     
-    // Switch to game screen
-    switchScreen("game");
-    
-    // Start the background music
-    initializeMusic();
-    
-    // Reset game state
-    score = 0;
-    gameTime = 0;
-    lastTimeCheck = Date.now();
-    bossSpawned = false;
-    regularEnemiesDisabled = false;
-    boss = null;
-    explosionAnimation = null;
-    
-    // Set up game start sequence
-    gameStartSequence = true;
-    playerReady = false;
-    enemySpawningActive = false;
-    
-    // Initialize device detection and controls
-    isMobile = detectMobile();
-    
-    if (isMobile) {
-        createMobileControls();
-    }
-    
-    // Place player below screen
-    player.y = canvas.height + 100;
-    player.hp = player.maxHp;
-    player.bullets = [];
-    
-    // Make player invulnerable for the first 3 seconds
-    playerInvulnerable = true;
-    playerInvulnerableTimer = Date.now();
-    
-    // Clear enemies
-    enemies.length = 0;
-    enemyBullets.length = 0;
-    circularGroup = null;
-    lastGroupSpawn = Date.now();
-    
-    // Reset powerups
-    powerupActive = false;
-    powerupBulletsLeft = 0;
-    powerup = null;
-    powerupSpawned = false;
-    reachedMilestones = [false, false, false, false];
+    try {
+        // Switch to game screen
+        switchScreen("game");
+        
+        // Start the background music
+        initializeMusic();
+        
+        // Reset game state
+        score = 0;
+        gameTime = 0;
+        lastTimeCheck = Date.now();
+        bossSpawned = false;
+        regularEnemiesDisabled = false;
+        boss = null;
+        explosionAnimation = null;
+        
+        // Set up game start sequence
+        gameStartSequence = true;
+        playerReady = false;
+        enemySpawningActive = false;
+        
+        // Initialize device detection and controls
+        isMobile = detectMobile();
+        
+        if (isMobile) {
+            createMobileControls();
+        }
+        
+        // Place player below screen
+        player.y = canvas.height + 100;
+        player.hp = player.maxHp;
+        player.bullets = [];
+        
+        // Make player invulnerable for the first 3 seconds
+        playerInvulnerable = true;
+        playerInvulnerableTimer = Date.now();
+        
+        // Clear enemies
+        enemies.length = 0;
+        enemyBullets.length = 0;
+        circularGroup = null;
+        lastGroupSpawn = Date.now();
+        
+        // Reset powerups
+        powerupActive = false;
+        powerupBulletsLeft = 0;
+        powerup = null;
+        powerupSpawned = false;
+        reachedMilestones = [false, false, false, false];
 
-    // Remove any existing powerup indicator
-    const indicator = document.getElementById('powerupIndicator');
-    if (indicator) {
-        indicator.remove();
+        // Remove any existing powerup indicator
+        const indicator = document.getElementById('powerupIndicator');
+        if (indicator) {
+            indicator.remove();
+        }
+        
+        scoreElement.textContent = score;
+        hpElement.textContent = player.hp;
+        
+        // Enable player control and enemy spawning after delay
+        setTimeout(() => {
+            playerReady = true;
+        }, 4000); // 4 seconds
+        
+        setTimeout(() => {
+            enemySpawningActive = true;
+        }, 5000); // 5 seconds
+        
+        // Start the game loop
+        gameLoop = requestAnimationFrame(update);
+        
+        console.log("Game started successfully");
+    } catch (e) {
+        console.error("Error starting game:", e);
     }
-    
-    scoreElement.textContent = score;
-    hpElement.textContent = player.hp;
-    
-    // Enable player control and enemy spawning after delay
-    setTimeout(() => {
-        playerReady = true;
-    }, 4000); // 4 seconds
-    
-    setTimeout(() => {
-        enemySpawningActive = true;
-    }, 5000); // 5 seconds
-    
-    // Start the game loop
-    gameLoop = requestAnimationFrame(update);
 }
 function restartGame() {
             isGameRunning = true;
