@@ -69,7 +69,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI19</button>
+        <button id="startButton" class="button">TESTI20</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -87,45 +87,49 @@ function assetLoaded() {
     if (assetsLoaded >= totalAssets) {
         console.log("All assets loaded, preparing start screen");
         
-        // Prepare the logo and player images
         try {
-            // Prepare the logo container
+            // Prepare the logo container - but first check if logo already exists
             const logoContainer = document.getElementById('logoContainer');
             if (logoContainer) {
-                // Clear any existing content
-                logoContainer.innerHTML = '';
-                // Add the logo image
-                const logoImg = document.createElement('img');
-                logoImg.src = 'LOGO.png';
-                logoImg.width = 300;
-                logoImg.alt = 'Game Logo';
-                logoImg.style.marginBottom = '20px';
-                logoContainer.appendChild(logoImg);
-            } else {
-                console.error("Logo container not found!");
-            }
-            
-            // Create player image for start screen (if it doesn't exist)
-            let startScreenImage = document.querySelector('#startScreen div[style*="margin: 20px auto"]');
-            if (!startScreenImage) {
-                startScreenImage = document.createElement('div');
-                startScreenImage.style.margin = '20px auto';
-                startScreenImage.innerHTML = `<img src="luke.png" width="200" height="200" alt="Player Ship">`;
+                // Check if logo already exists
+                const existingLogo = logoContainer.querySelector('img');
                 
-                // Insert before the start button if possible
-                const startButton = document.getElementById('startButton');
-                if (startButton && startButton.parentNode) {
-                    startButton.parentNode.insertBefore(startScreenImage, startButton);
+                // Only add logo if it doesn't already exist
+                if (!existingLogo) {
+                    console.log("Adding logo to start screen");
+                    const logoImg = document.createElement('img');
+                    logoImg.src = 'LOGO.png';
+                    logoImg.width = 300;
+                    logoImg.alt = 'Game Logo';
+                    logoImg.style.marginBottom = '20px';
+                    logoContainer.appendChild(logoImg);
                 } else {
-                    // Fall back to appending to the start screen
-                    const startScreen = document.getElementById('startScreen');
-                    if (startScreen) {
-                        startScreen.appendChild(startScreenImage);
-                    }
+                    console.log("Logo already exists, not adding another");
                 }
             }
+            
+            // Handle player image similar to logo - check if it exists first
+            const startScreen = document.getElementById('startScreen');
+            const existingPlayerImage = startScreen ? startScreen.querySelector('div[style*="margin: 20px auto"] img') : null;
+            
+            if (!existingPlayerImage && startScreen) {
+				console.log("Adding player image to start screen");
+				const startScreenImage = document.createElement('div');
+				startScreenImage.style.margin = '20px auto';
+				
+				// Set the correct width and height
+				startScreenImage.innerHTML = `<img src="luke.png" width="400" height="400" alt="Player Ship" style="max-width: 100%;">`;
+				
+				// Insert before the start button
+				const startButton = document.getElementById('startButton');
+				if (startButton) {
+					startScreen.insertBefore(startScreenImage, startButton);
+				} else {
+					startScreen.appendChild(startScreenImage);
+				}
+			}
         } catch (e) {
-            console.error("Error adding images to start screen:", e);
+            console.error("Error handling start screen elements:", e);
         }
     }
 }
@@ -237,26 +241,30 @@ function startLoading() {
 function switchScreen(newScreen) {
     console.log(`Switching from ${currentScreen} to ${newScreen}`);
     
-    // Debug screen elements
-    console.log("startScreen element:", startScreen);
-    console.log("gameOverScreen element:", gameOverScreen);
-    console.log("gameStats element:", gameStats);
+    // Stop any ongoing animations first
+    if (loadingLoop) {
+        cancelAnimationFrame(loadingLoop);
+        loadingLoop = null;
+        console.log("Cancelled loading animation");
+    }
+    
+    // If switching from loading to start, clear the canvas
+    if (currentScreen === "loading" && newScreen === "start") {
+        console.log("Clearing canvas from loading screen");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        isLoading = false;
+    }
     
     // Hide all screens first
     if (startScreen) startScreen.style.display = 'none';
     if (gameOverScreen) gameOverScreen.style.display = 'none';
     if (gameStats) gameStats.style.display = 'none';
     
-    // Stop any ongoing animations
-    if (loadingLoop) {
-        cancelAnimationFrame(loadingLoop);
-        loadingLoop = null;
-    }
-    
     // Handle specific screen transitions
     if (newScreen === "loading") {
         isLoading = true;
         isGameRunning = false;
+        
         // Start the loading animation on canvas
         function loadingAnimation() {
             if (currentScreen === "loading") {
@@ -270,52 +278,38 @@ function switchScreen(newScreen) {
         isLoading = false;
         isGameRunning = false;
         
-        // Explicitly show all elements within the start screen
+        // Make sure canvas is clear
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Show start screen
         if (startScreen) {
             startScreen.style.display = 'block';
-            console.log("Start screen shown:", startScreen.style.display);
-            
-            // Make sure button is visible
-            const startButton = document.getElementById('startButton');
-            if (startButton) {
-                startButton.style.display = 'inline-block';
-                console.log("Start button shown");
-            } else {
-                console.error("Start button not found!");
-            }
-            
-            // Make sure logo container is visible
-            const logoContainer = document.getElementById('logoContainer');
-            if (logoContainer) {
-                logoContainer.style.display = 'block';
-            }
-        } else {
-            console.error("Start screen element not found!");
+            console.log("Start screen shown");
         }
     } 
     else if (newScreen === "game") {
         isLoading = false;
         isGameRunning = true;
+        
+        // Clear any loading or start screen elements
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         if (gameStats) {
             gameStats.style.display = 'block';
-            console.log("Game stats shown");
-        } else {
-            console.error("Game stats element not found!");
         }
     } 
     else if (newScreen === "gameOver") {
         isLoading = false;
         isGameRunning = false;
+        
         if (gameOverScreen) {
             gameOverScreen.style.display = 'block';
-            console.log("Game over screen shown");
-        } else {
-            console.error("Game over screen element not found!");
         }
     }
     
     currentScreen = newScreen;
 }
+
 function detectMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
            (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
@@ -340,8 +334,6 @@ function loadAllAssets() {
     // Reset the counter to make sure we start from 0
     assetsLoaded = 0;
     
-    if (!window.pendingScreenTimeouts) window.pendingScreenTimeouts = [];
-    
     // Create a timeout safety mechanism
     const loadingTimeout = setTimeout(() => {
         console.log("Loading timeout - forcing game to start anyway");
@@ -349,10 +341,12 @@ function loadAllAssets() {
         assetsLoaded = totalAssets;
         showLoadingScreen(); // Update the loading screen one last time
         
-        // Only switch if we're not already in game mode
-        if (currentScreen !== "game" && !isGameRunning) {
-            switchScreen("start");
-        }
+        // Switch to start screen after a brief delay to show 100%
+        setTimeout(() => {
+            if (currentScreen === "loading") {
+                switchScreen("start");
+            }
+        }, 500);
     }, 10000);
     
     window.pendingScreenTimeouts.push(loadingTimeout);
@@ -406,6 +400,20 @@ function loadAllAssets() {
         console.error("Audio preload error:", e);
         assetLoaded(); // Count as loaded even if it fails
     }
+	const checkAssetsInterval = setInterval(() => {
+        if (assetsLoaded >= totalAssets) {
+            console.log("All assets loaded via interval check");
+            clearInterval(checkAssetsInterval);
+            
+            // Switch to start screen after a brief delay
+            setTimeout(() => {
+                if (currentScreen === "loading") {
+                    switchScreen("start");
+                }
+            }, 500);
+        }
+    }, 500);
+}
 }
 
 // Add this at the end of your script block
@@ -525,7 +533,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI19', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('Loading...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -542,15 +550,6 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '14px Arial';
     ctx.fillText(`${Math.min(Math.round(progress * 100), 100)}%`, canvas.width / 2, canvas.height / 2 + 40);
-    
-    // Once loading is complete, transition to start screen
-    if (progress >= 1 && currentScreen === "loading") {
-        console.log("Loading complete, transitioning to start screen");
-        // Use setTimeout to ensure the final frame is drawn
-        setTimeout(() => {
-            switchScreen("start");
-        }, 500);
-    }
 }
 
 		// Create a function to initialize and play the music
