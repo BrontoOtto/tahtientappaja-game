@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI10</button>
+        <button id="startButton" class="button">TESTI11</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -78,88 +78,34 @@ function assetLoaded() {
     if (assetsLoaded >= totalAssets) {
         console.log("All assets loaded, showing start screen");
         isLoading = false;
+        
+        // Add the DOM elements now that all assets are loaded
+        try {
+            // Add player image
+            const startScreenImage = document.createElement('div');
+            startScreenImage.style.margin = '20px auto';
+            startScreenImage.innerHTML = `<img src="luke.png" width="400" height="400" alt="Player Ship">`;
+            
+            // Add logo to start screen
+            const logoContainer = document.getElementById('logoContainer');
+            if (logoContainer) {
+                logoContainer.innerHTML = `<img src="LOGO.png" width="300" alt="Game Logo" style="margin-bottom: 20px;">`;
+            }
+            
+            // Insert the image before the start button
+            const startButton = document.getElementById('startButton');
+            if (startButton && startButton.parentNode) {
+                startScreen.insertBefore(startScreenImage, startButton);
+            }
+        } catch (e) {
+            console.error("Error adding images to start screen:", e);
+        }
+        
         setTimeout(() => {
             startScreen.style.display = 'block';
         }, 500); // Small delay to ensure loading screen can finish rendering
     }
 }
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-		const startScreen = document.getElementById('startScreen');
-		const gameOverScreen = document.getElementById('gameOverScreen');
-		const gameStats = document.getElementById('gameStats');
-		const startButton = document.getElementById('startButton');
-		const restartButton = document.getElementById('restartButton');
-		const scoreElement = document.getElementById('score');
-		const hpElement = document.getElementById('hp');
-		const finalScoreElement = document.getElementById('finalScore');
-		
-
-
-
-
-
-		
-		canvas.width = 400;
-        canvas.height = 800;
-        // Game state global variables
-		// Initialize image objects first
-		window.enemyImage = new Image();
-		window.shootingEnemyImage = new Image();
-		window.circularEnemyImage = new Image();
-		window.spinnerEnemyImage = new Image();
-		window.powerupImage = new Image();
-		window.bossImage = new Image();
-		window.playerImage = new Image();
-		window.logoImage = new Image();
-		let totalAssets = 9; // Increased by 1 to include the logo
-		let keys = {}; // Track pressed keys
-		let isMobile = false; // Will be set based on device detection
-		let joystick = {
-			active: false,
-			baseX: 0,
-			baseY: 0,
-			knobX: 0,
-			knobY: 0,
-			radius: 50,  // Size of the joystick base
-			knobRadius: 25, // Size of the inner knob
-			maxDistance: 50 // Maximum distance the knob can move from center
-		};
-
-		let fireButton = {
-			x: 0,
-			y: 0,
-			radius: 40,
-			pressed: false
-		};
-		let gameStartSequence = false;
-		let playerReady = false;
-		let enemySpawningActive = false;
-		let playerInvulnerable = false;
-		let playerInvulnerableTimer = 0;
-		let assetsLoaded = 0;
-		let isLoading = true;
-		let backgroundMusic = null;
-		let powerupActive = false;
-		let powerupBulletsLeft = 0;
-		let powerup = null;
-		const powerupMilestones = [100, 500, 1000, 3000];
-		let reachedMilestones = [false, false, false, false];
-		let powerupSpawned = false;
-        let gameLoop;
-        let isGameRunning = false;
-        let lastShot = 0;
-        let score = 0;
-        const shootingDelay = 250;
-		let rapidFireShootingDelay = shootingDelay / 3; //200% faster
-		let gameTime = 0; // Time in seconds
-		let lastTimeCheck = 0;
-		let explosionAnimation = null;
-		let bossSpawned = false;
-		let regularEnemiesDisabled = false;
-		let boss = null;
-		let lastBossMissile = 0;
-		const bossMissileDelay = 5000; // 10 seconds
 // Add this function to properly initialize loading
 function startLoading() {
     // Hide start screen initially
@@ -198,17 +144,10 @@ function loadAllAssets() {
         while (assetsLoaded < totalAssets) {
             assetLoaded(); // Force load completion
         }
-    }, 5000); // 5 second timeout
-	
-	window.logoImage = new Image();
-	window.logoImage.onload = assetLoaded;
-	window.logoImage.onerror = () => { 
-		console.log("Error loading logo image, using text fallback"); 
-		assetLoaded(); 
-	};
-    
+    }, 10000); // 10 second timeout
+	   
     // Set up all asset loading with better error handling
-    window.enemyImage.onload = () => { assetLoaded(); clearTimeout(loadingTimeout); };
+    window.enemyImage.onload = () => { assetLoaded(); };
     window.enemyImage.onerror = () => { 
         console.log("Error loading enemy image, using placeholder"); 
         assetLoaded(); 
@@ -245,27 +184,22 @@ function loadAllAssets() {
     };
     
     window.playerImage.onload = function() {
-		try {
-			// Add player image
-			const startScreenImage = document.createElement('div');
-			startScreenImage.style.margin = '20px auto';
-			startScreenImage.innerHTML = `<img src="luke.png" width="400" height="400" alt="Player Ship">`;
-			
-			// Add logo to start screen
-			const logoContainer = document.getElementById('logoContainer');
-			logoContainer.innerHTML = `<img src="LOGO.png" width="300" alt="Game Logo" style="margin-bottom: 20px;">`;
-			
-			// Insert the image before the start button
-			const startButton = document.getElementById('startButton');
-			startScreen.insertBefore(startScreenImage, startButton);
-		} catch (e) {
-			console.error("Error adding images to start screen:", e);
-		}
-		
-		assetLoaded();
-	};
+        try {
+            // We'll add DOM elements after all assets are loaded, not here
+            console.log("Player image loaded successfully");
+        } catch (e) {
+            console.error("Error handling player image:", e);
+        }
+        assetLoaded();
+    };
     window.playerImage.onerror = () => { 
         console.log("Error loading player image, using placeholder"); 
+        assetLoaded(); 
+    };
+	// Set up logo handler
+    window.logoImage.onload = () => { assetLoaded(); };
+    window.logoImage.onerror = () => { 
+        console.log("Error loading logo image, using text fallback"); 
         assetLoaded(); 
     };
     
@@ -305,11 +239,15 @@ function loadAllAssets() {
 
 // Add this at the end of your script block
 document.addEventListener('DOMContentLoaded', function() {
-    
+    console.log("DOM loaded, initializing game...");
     // Set initial display for screens
     gameStats.style.display = 'none';
     gameOverScreen.style.display = 'none';
     startScreen.style.display = 'none'; // Hide initially until loading
+	
+	// Draw initial black screen before loading starts
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Add these lines to ensure the button listeners are properly attached
     startButton.addEventListener('click', function() {
@@ -318,8 +256,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     restartButton.addEventListener('click', restartGame);
 	
-	// Start loading assets
-	startLoading();
+	// Start loading assets with slight delay to ensure DOM is ready
+    setTimeout(startLoading, 100);
 });
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
@@ -384,7 +322,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI10...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI11...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1584,12 +1522,20 @@ function update() {
     drawEnemies();
     
     // Draw player
-    ctx.drawImage(window.playerImage, 
-        player.x - player.size/2, 
-        player.y - player.size/2,
-        player.size,
-        player.size
-    );
+    if (window.playerImage.complete && window.playerImage.naturalWidth > 0) {
+		ctx.drawImage(window.playerImage, 
+			player.x - player.size/2, 
+			player.y - player.size/2,
+			player.size,
+			player.size
+		);
+	} else {
+		// Fallback if image isn't loaded
+		ctx.fillStyle = '#AAFFAA';
+		ctx.beginPath();
+		ctx.arc(player.x, player.y, player.size/2, 0, Math.PI * 2);
+		ctx.fill();
+	}
     
     // Draw invulnerability effect
     if (playerInvulnerable) {
