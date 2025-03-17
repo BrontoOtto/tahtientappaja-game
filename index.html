@@ -59,7 +59,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI13</button>
+        <button id="startButton" class="button">TESTI14</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -68,6 +68,7 @@
     </div>
     <script>
 	// Asset loading handler
+// Modify your assetLoaded function to handle the transition better
 function assetLoaded() {
     assetsLoaded++;
     console.log("Asset loaded. Total: " + assetsLoaded + "/" + totalAssets);
@@ -77,15 +78,18 @@ function assetLoaded() {
     
     // Show start screen when all assets are loaded
     if (assetsLoaded >= totalAssets) {
-        console.log("All assets loaded, showing start screen");
+        console.log("All assets loaded, switching to start screen");
         isLoading = false;
-        // Hide loading screen properly first
-        setTimeout(() => {
-            // Make sure we don't show start screen while still loading
-            if (!isLoading) {
-                startScreen.style.display = 'block';
-            }
-        }, 500);
+        
+        // Stop the loading screen update
+        cancelAnimationFrame(loadingLoop);
+        
+        // Clear the canvas before showing the start screen
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Show the start screen
+        startScreen.style.display = 'block';
     }
 }
         const canvas = document.getElementById('gameCanvas');
@@ -108,6 +112,7 @@ function assetLoaded() {
 		canvas.width = 400;
         canvas.height = 800;
         // Game state global variables
+		let loadingLoop;
 		let totalAssets = 9; // Increased by 1 to include the logo
 		let keys = {}; // Track pressed keys
 		let isMobile = false; // Will be set based on device detection
@@ -158,11 +163,22 @@ function assetLoaded() {
 		const bossMissileDelay = 5000; // 10 seconds
 // Add this function to properly initialize loading
 function startLoading() {
-    // Hide start screen initially
+    // Hide all screens first
     startScreen.style.display = 'none';
+    gameOverScreen.style.display = 'none';
+    gameStats.style.display = 'none';
     
-    // Show loading screen first
+    // Initial loading screen render
     showLoadingScreen();
+    
+    // Start the loading animation loop
+    function loadingAnimation() {
+        if (isLoading) {
+            showLoadingScreen();
+            loadingLoop = requestAnimationFrame(loadingAnimation);
+        }
+    }
+    loadingLoop = requestAnimationFrame(loadingAnimation);
     
     // Start loading assets
     loadAllAssets();
@@ -343,11 +359,11 @@ function showLoadingScreen() {
     
     // Draw the logo at the top - make sure we check if it's loaded yet
     if (window.logoImage && window.logoImage.complete && window.logoImage.naturalWidth > 0) {
-        const logoWidth = 300; // Adjust as needed
-        const logoHeight = 150; // Adjust as needed
+        const logoWidth = 300;
+        const logoHeight = 150;
         ctx.drawImage(window.logoImage, 
             (canvas.width - logoWidth) / 2, 
-            50, // Position from top
+            50,
             logoWidth, 
             logoHeight);
     }
@@ -356,7 +372,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI13...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI14...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -364,15 +380,15 @@ function showLoadingScreen() {
     const barHeight = 20;
     ctx.fillRect(canvas.width / 2 - barWidth / 2, canvas.height / 2, barWidth, barHeight);
     
-    // Draw loading bar progress
-    const progress = assetsLoaded / totalAssets;
+    // Draw loading bar progress capped at 100%
+    const progress = Math.min(assetsLoaded / totalAssets, 1);
     ctx.fillStyle = '#4CAF50';
     ctx.fillRect(canvas.width / 2 - barWidth / 2, canvas.height / 2, barWidth * progress, barHeight);
     
     // Draw percentage
     ctx.fillStyle = 'white';
     ctx.font = '14px Arial';
-    ctx.fillText(`${Math.round(progress * 100)}%`, canvas.width / 2, canvas.height / 2 + 40);
+    ctx.fillText(`${Math.min(Math.round(progress * 100), 100)}%`, canvas.width / 2, canvas.height / 2 + 40);
 }
 
 		// Create a function to initialize and play the music
@@ -465,6 +481,14 @@ function initializeMusic() {
 		let mouseY = 0;
         let isMouseDown = false;
 function startGame() {
+    console.log("Starting game...");
+    // Ensure the start screen is hidden
+    startScreen.style.display = 'none';
+    
+    // Start the background music
+    initializeMusic();
+    
+    isGameRunning = true;
 if (backgroundMusic) {
     backgroundMusic.play().catch(e => {
         console.log("Audio play error:", e);
@@ -1362,13 +1386,16 @@ function drawEnemyBullets() {
 }
 // Replace your current update function with this corrected version:
 function update() {
+    // Make sure we don't run the game loop while loading
     if (isLoading) {
-        showLoadingScreen();
         requestAnimationFrame(update);
-        return; 
+        return;
     }
 
-    if (!isGameRunning) return;
+    // If the game is not running, we shouldn't be in this function
+    if (!isGameRunning) {
+        return;
+    }
     
     // Track game time
     const now = Date.now();
