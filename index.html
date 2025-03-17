@@ -59,7 +59,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI11</button>
+        <button id="startButton" class="button">TESTI12</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -184,82 +184,56 @@ function createMobileControls() {
 // Fix the loadAllAssets function to use window.enemyImage references:
 // Replace your loadAllAssets function with this improved version:
 function loadAllAssets() {
-    // Create a timeout safety mechanism
+    // Create a timeout safety mechanism with a longer timeout for mobile devices
     const loadingTimeout = setTimeout(() => {
         console.log("Loading timeout - forcing game to start anyway");
         while (assetsLoaded < totalAssets) {
             assetLoaded(); // Force load completion
         }
-    }, 5000); // 5 second timeout
-	
-	window.logoImage = new Image();
-	window.logoImage.onload = assetLoaded;
-	window.logoImage.onerror = () => { 
-		console.log("Error loading logo image, using text fallback"); 
-		assetLoaded(); 
-	};
+    }, 10000); // 10 second timeout
+    
+    // Use shorter individual timeouts for each asset
+    function setupAssetLoadTimeout(asset, name) {
+        setTimeout(() => {
+            if (!asset.complete) {
+                console.log(`${name} loading timeout - marking as loaded anyway`);
+                assetLoaded();
+            }
+        }, 3000); // 3 second individual timeout
+    }
     
     // Set up all asset loading with better error handling
-    window.enemyImage.onload = () => { assetLoaded(); clearTimeout(loadingTimeout); };
-    window.enemyImage.onerror = () => { 
-        console.log("Error loading enemy image, using placeholder"); 
-        assetLoaded(); 
-    };
+    window.enemyImage.onload = () => { assetLoaded(); };
+    window.enemyImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.enemyImage, "Enemy image");
     
     window.shootingEnemyImage.onload = () => { assetLoaded(); };
-    window.shootingEnemyImage.onerror = () => { 
-        console.log("Error loading shooting enemy image, using placeholder"); 
-        assetLoaded(); 
-    };
+    window.shootingEnemyImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.shootingEnemyImage, "Shooting enemy image");
     
     window.circularEnemyImage.onload = () => { assetLoaded(); };
-    window.circularEnemyImage.onerror = () => { 
-        console.log("Error loading circular enemy image, using placeholder"); 
-        assetLoaded(); 
-    };
+    window.circularEnemyImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.circularEnemyImage, "Circular enemy image");
     
     window.spinnerEnemyImage.onload = () => { assetLoaded(); };
-    window.spinnerEnemyImage.onerror = () => { 
-        console.log("Error loading spinner enemy image, using placeholder"); 
-        assetLoaded(); 
-    };
+    window.spinnerEnemyImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.spinnerEnemyImage, "Spinner enemy image");
     
     window.powerupImage.onload = () => { assetLoaded(); };
-    window.powerupImage.onerror = () => { 
-        console.log("Error loading powerup image, using placeholder"); 
-        assetLoaded(); 
-    };
+    window.powerupImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.powerupImage, "Powerup image");
     
     window.bossImage.onload = () => { assetLoaded(); };
-    window.bossImage.onerror = () => { 
-        console.log("Error loading boss image, using placeholder"); 
-        assetLoaded(); 
-    };
+    window.bossImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.bossImage, "Boss image");
     
-    window.playerImage.onload = function() {
-		try {
-			// Add player image
-			const startScreenImage = document.createElement('div');
-			startScreenImage.style.margin = '20px auto';
-			startScreenImage.innerHTML = `<img src="luke.png" width="400" height="400" alt="Player Ship">`;
-			
-			// Add logo to start screen
-			const logoContainer = document.getElementById('logoContainer');
-			logoContainer.innerHTML = `<img src="LOGO.png" width="300" alt="Game Logo" style="margin-bottom: 20px;">`;
-			
-			// Insert the image before the start button
-			const startButton = document.getElementById('startButton');
-			startScreen.insertBefore(startScreenImage, startButton);
-		} catch (e) {
-			console.error("Error adding images to start screen:", e);
-		}
-		
-		assetLoaded();
-	};
-    window.playerImage.onerror = () => { 
-        console.log("Error loading player image, using placeholder"); 
-        assetLoaded(); 
-    };
+    window.playerImage.onload = () => { assetLoaded(); };
+    window.playerImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.playerImage, "Player image");
+    
+    window.logoImage.onload = () => { assetLoaded(); };
+    window.logoImage.onerror = () => { assetLoaded(); };
+    setupAssetLoadTimeout(window.logoImage, "Logo image");
     
     // Now set the sources to start loading
     window.enemyImage.src = 'punatahti.png';
@@ -269,29 +243,35 @@ function loadAllAssets() {
     window.powerupImage.src = 'powerup1.png';
     window.bossImage.src = 'boss.png';
     window.playerImage.src = 'luke.png';
-	window.logoImage.src = 'LOGO.png';
+    window.logoImage.src = 'LOGO.png';
     
-    // Setup audio preloading with better error handling
-    try {
-        const tempAudio = new Audio();
-        tempAudio.addEventListener('canplaythrough', assetLoaded, {once: true});
-        tempAudio.addEventListener('error', () => {
-            console.log("Audio preload error - continuing anyway");
-            assetLoaded();
-        }, {once: true});
-        
-        // Add a timeout for audio loading in case neither event fires
-        setTimeout(() => {
-            if (tempAudio.readyState === 0) {
+    // Handle audio loading specially for iOS
+    // On iOS, we'll just mark the audio as loaded immediately
+    // and handle actual loading when user interaction happens
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        console.log("iOS device detected, skipping audio preload");
+        assetLoaded(); // Mark audio as loaded without waiting
+    } else {
+        // Normal audio loading for non-iOS
+        try {
+            const tempAudio = new Audio();
+            tempAudio.addEventListener('canplaythrough', assetLoaded, {once: true});
+            tempAudio.addEventListener('error', () => {
+                console.log("Audio preload error - continuing anyway");
+                assetLoaded();
+            }, {once: true});
+            
+            // Add a timeout for audio loading
+            setTimeout(() => {
                 console.log("Audio timeout - continuing anyway");
                 assetLoaded();
-            }
-        }, 2000);
-        
-        tempAudio.src = 'tappaja.mp3';
-    } catch (e) {
-        console.error("Audio preload error:", e);
-        assetLoaded(); // Count as loaded even if it fails
+            }, 2000);
+            
+            tempAudio.src = 'tappaja.mp3';
+        } catch (e) {
+            console.error("Audio preload error:", e);
+            assetLoaded(); // Count as loaded even if it fails
+        }
     }
 }
 
@@ -386,7 +366,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI11...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI12...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -655,7 +635,7 @@ if (backgroundMusic) {
 					y: boss.y + boss.height / 2,
 					width: 20,
 					height: 30,
-					hp: 6,
+					hp: 4,
 					speed: 0.7,
 					isMissile: true,
 					points: 20
@@ -1404,9 +1384,20 @@ function update() {
     gameTime += deltaTime / 1000; // Convert to seconds
     
     // Check for boss spawn at 3:30 (210 seconds)
-    if (gameTime >= 189 && !bossSpawned) {
-        spawnBoss();
-    }
+    if (gameTime >= 180 && !bossSpawned) {
+		// Stop enemy spawning 9 seconds before boss appears
+		regularEnemiesDisabled = true;
+	}
+
+	if (gameTime >= 189 && !bossSpawned) {
+		// Clear all existing enemies
+		enemies.length = 0;
+		enemyBullets.length = 0;
+		circularGroup = null;
+		
+		// Spawn boss
+		spawnBoss();
+	}
     
     // Check for powerup milestones
     for (let i = 0; i < powerupMilestones.length; i++) {
