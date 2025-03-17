@@ -35,6 +35,14 @@
             cursor: pointer;
             font-size: 18px;
         }
+        #gameStats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            z-index: 100;
+            display: none;
+        }
         #gameOverScreen {
             display: none;
             z-index: 200;
@@ -44,6 +52,10 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     
+    <div id="gameStats">
+        <div>Score: <span id="score">0</span></div>
+        <div>HP: <span id="hp">100</span></div>
+    </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
         <button id="startButton" class="button">Uusi Peli</button>
@@ -371,7 +383,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TEST...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI1...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
