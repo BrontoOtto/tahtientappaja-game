@@ -1438,8 +1438,7 @@ function update() {
 					// Calculate the movement speed based on how far joystick is moved
 					// This creates a curve where slight movements cause slow speed,
 					// and full movements cause full speed
-					const maxSpeed = 5;
-					const moveSpeed = maxSpeed * Math.min(normalizedLength, 1);
+					const maxSpeed = 3;
 					
 					// Apply movement in the joystick direction
 					player.x += (dx / length) * moveSpeed;
