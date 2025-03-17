@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI9</button>
+        <button id="startButton" class="button">TESTI10</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -103,6 +103,15 @@ function assetLoaded() {
 		canvas.width = 400;
         canvas.height = 800;
         // Game state global variables
+		// Initialize image objects first
+		window.enemyImage = new Image();
+		window.shootingEnemyImage = new Image();
+		window.circularEnemyImage = new Image();
+		window.spinnerEnemyImage = new Image();
+		window.powerupImage = new Image();
+		window.bossImage = new Image();
+		window.playerImage = new Image();
+		window.logoImage = new Image();
 		let totalAssets = 9; // Increased by 1 to include the logo
 		let keys = {}; // Track pressed keys
 		let isMobile = false; // Will be set based on device detection
@@ -296,16 +305,6 @@ function loadAllAssets() {
 
 // Add this at the end of your script block
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM loaded, initializing game...");
-    // Initialize image objects first
-    window.enemyImage = new Image();
-    window.shootingEnemyImage = new Image();
-    window.circularEnemyImage = new Image();
-    window.spinnerEnemyImage = new Image();
-    window.powerupImage = new Image();
-    window.bossImage = new Image();
-    window.playerImage = new Image();
-	window.logoImage = new Image();
     
     // Set initial display for screens
     gameStats.style.display = 'none';
@@ -385,7 +384,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI9...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI10...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
