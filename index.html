@@ -51,11 +51,6 @@
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    
-    <div id="gameStats" style:"display:none;">
-        <div>Score: <span id="score">0</span></div>
-        <div>HP: <span id="hp">100</span></div>
-    </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
         <button id="startButton" class="button">Uusi Peli</button>
@@ -383,7 +378,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI3...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI2...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -520,9 +515,8 @@ function startGame() {
     if (indicator) {
         indicator.remove();
     }
-    
-    scoreElement.textContent = score;
-    hpElement.textContent = player.hp;
+    //MUISTA TAMA PAIKKA
+
     
     gameStats.style.display = 'block';
     gameLoop = requestAnimationFrame(update);
@@ -566,8 +560,6 @@ function startGame() {
 			}
 
             
-            scoreElement.textContent = score;
-            hpElement.textContent = player.hp;
             
             gameOverScreen.style.display = 'none';
             gameStats.style.display = 'block';
@@ -984,7 +976,6 @@ function updateBullets() {
                 
                 if (enemy.hp <= 0) {
                     score += enemy.points;
-                    scoreElement.textContent = score;
                     enemies.splice(j, 1);
                     if (circularGroup) {
                         circularGroup.members = circularGroup.members.filter(m => m !== enemy);
