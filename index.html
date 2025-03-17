@@ -52,7 +52,7 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     
-    <div id="gameStats">
+    <div id="gameStats" display:"display:none;">
         <div>Score: <span id="score">0</span></div>
         <div>HP: <span id="hp">100</span></div>
     </div>
@@ -383,7 +383,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI1...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI2...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1439,7 +1439,7 @@ function update() {
 					// This creates a curve where slight movements cause slow speed,
 					// and full movements cause full speed
 					const maxSpeed = 3;
-					
+					const moveSpeed = maxSpeed * normalizedLength; // Define moveSpeed based on normalization
 					// Apply movement in the joystick direction
 					player.x += (dx / length) * moveSpeed;
 					player.y += (dy / length) * moveSpeed;
