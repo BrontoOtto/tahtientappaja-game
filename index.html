@@ -85,8 +85,6 @@ function assetLoaded() {
 		const gameStats = document.getElementById('gameStats');
 		const startButton = document.getElementById('startButton');
 		const restartButton = document.getElementById('restartButton');
-		const scoreElement = document.getElementById('score');
-		const hpElement = document.getElementById('hp');
 		const finalScoreElement = document.getElementById('finalScore');
 		
 
@@ -1004,7 +1002,6 @@ function updateEnemyBullets() {
 			height: player.size
 		})) {
             player.hp -= 5; // Bullet damage
-            hpElement.textContent = player.hp;
             enemyBullets.splice(i, 1);
             
             if (player.hp <= 0) {
@@ -1028,7 +1025,6 @@ function updateEnemyBullets() {
             
             // Defeat player when animation completes
             player.hp -= 100;
-            hpElement.textContent = player.hp;
             if (player.hp <= 0) {
                 endGame();
             }
