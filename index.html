@@ -58,7 +58,7 @@
     </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
-        <button id="startButton" class="button">TESTI14</button>
+        <button id="startButton" class="button">TESTI15</button>
     </div>
     <div id="gameOverScreen" class="screen">
         <h2>Game Over</h2>
@@ -351,25 +351,7 @@ function loadAllAssets() {
 
 // Add this at the end of your script block
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM loaded, initializing game...");
-    // Set initial display for screens
-    gameStats.style.display = 'none';
-    gameOverScreen.style.display = 'none';
-    startScreen.style.display = 'none'; // Hide initially until loading
-	
-	// Draw initial black screen before loading starts
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Add these lines to ensure the button listeners are properly attached
-    startButton.addEventListener('click', function() {
-        console.log("Start button clicked!");
-        startGame();
-    });
-    restartButton.addEventListener('click', restartGame);
-	
-	// Start loading assets with slight delay to ensure DOM is ready
-    setTimeout(startLoading, 100);
+    startScreen.style.display = 'block';
 });
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
@@ -434,7 +416,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI14...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI15...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1199,242 +1181,27 @@ function updateEnemyBullets() {
     }
 }
         function updateEnemies() {
-			// Only spawn regular enemies if boss isn't active, not disabled, and enemy spawning is active
-			if (enemySpawningActive && !regularEnemiesDisabled && enemies.length < 5 && Math.random() < 0.02) {
-				// Check if game time is past 1 minute (60 seconds) and add chance for spinner
-				if (gameTime >= 60 && Math.random() < 0.2) { // 20% chance to spawn spinner instead of regular enemy
-					// Spawn spinner enemy
-					const spinnerEnemy = {
-						x: Math.random() * (canvas.width - 30) + 15,
-						y: 60, // Slightly below the top
-						width: 24,
-						height: 24,
-						hp: 8, // Tougher than regular enemies
-						speed: 4, // Fast when launched
-						points: 50, // Worth more points
-						isSpinner: true,
-						spinTimer: Date.now(),
-						spinDuration: 3000, // 3 seconds of spinning
-						angle: 0, // Current rotation angle
-						launched: false
-					};
-					enemies.push(spinnerEnemy);
-				} else {
-					spawnEnemy();
-				}
-			}
-			
-			updateCircularGroup();
-			
+			// Just do simple movement for now, no collisions
 			for (let i = enemies.length - 1; i >= 0; i--) {
 				const enemy = enemies[i];
 				
-				if (!enemy.isSpinner) { // Don't modify spinner enemies since they have their own rotation
-					enemy.angle += enemy.rotationSpeed;
-				}
+				// Simple movement
+				enemy.y += enemy.speed || 1;
 				
-				if (enemy.isSpinner) {
-					// Increase rotation angle
-					enemy.angle += 0.1; // Rotation speed
-					
-					// Check if it's time to launch
-					const now = Date.now();
-					if (!enemy.launched && now - enemy.spinTimer >= enemy.spinDuration) {
-						enemy.launched = true;
-						
-						// Calculate direction to player
-						const dx = player.x - enemy.x;
-						const dy = player.y - enemy.y;
-						const distance = Math.sqrt(dx * dx + dy * dy);
-						
-						// Store normalized direction
-						if (distance > 0) {
-							enemy.dirX = dx / distance;
-							enemy.dirY = dy / distance;
-						} else {
-							enemy.dirX = 0;
-							enemy.dirY = 1; // Default downward
-						}
-					}
-					
-					// Move if launched
-					if (enemy.launched) {
-						enemy.x += enemy.dirX * enemy.speed;
-						enemy.y += enemy.dirY * enemy.speed;
-					}
-				}
-				else if (enemy.isMissile) {
-					// Calculate direction to player for homing
-					const dx = player.x - enemy.x;
-					const dy = player.y - enemy.y;
-					const distance = Math.sqrt(dx * dx + dy * dy);
-					
-					// Update position
-					if (distance > 0) {
-						enemy.x += (dx / distance) * enemy.speed;
-						enemy.y += (dy / distance) * enemy.speed;
-					} else {
-						enemy.y += enemy.speed;
-					}
-				}
-				// Handle regular and shooting enemies
-				else if (!enemy.isCircular) {
-					enemy.y += enemy.speed;
-					
-					// Make shooting enemies shoot
-					if (enemy.isShooting) {
-						enemyShoot(enemy);
-					}
-				}
-				
-				// Check for collision with player for all enemy types
-				if (!playerInvulnerable && checkCollision(enemy, {
-					x: player.x - player.size/2,
-					y: player.y - player.size/2,
-					width: player.size,
-					height: player.size
-				})) {
-					// Different damage based on enemy type HUOMIO
-					if (!playerInvulnerable) {
-						let hitboxWidth = enemy.width;
-						let hitboxHeight = enemy.height;
-					
-					// Apply larger hitbox for non-spinner enemies
-					if (!enemy.isSpinner && !enemy.isMissile) {
-						hitboxWidth *= enemy.hitboxScale || 1.5;
-						hitboxHeight *= enemy.hitboxScale || 1.5;
-					}
-					
-					if (checkCollision({
-						x: enemy.x - hitboxWidth/2,
-						y: enemy.y - hitboxHeight/2,
-						width: hitboxWidth,
-						height: hitboxHeight
-					}, {
-						x: player.x - player.size/2,
-						y: player.y - player.size/2,
-						width: player.size,
-						height: player.size
-					})) {
-					
-					if (enemy.isSpinner && enemy.launched) {
-						player.hp -= 30; // Spinner deals 30 damage when launched
-					} else if (enemy.isMissile) {
-						player.hp -= 15; // Missiles deal 15 damage
-					} else {
-						player.hp -= 10; // Regular enemies deal 10 damage
-					}
-					
+				// Remove if off-screen
+				if (enemy.y > canvas.height + 50) {
 					enemies.splice(i, 1);
-					if (circularGroup) {
-						circularGroup.members = circularGroup.members.filter(m => m !== enemy);
-					}
-					if (player.hp <= 0) {
-						endGame();
-					}
-					continue;
-				}
-				
-				// Check if enemy is off-screen
-				if ((!enemy.isCircular && !enemy.isMissile && !enemy.isSpinner && enemy.y > canvas.height + enemy.height) ||
-					(enemy.isSpinner && enemy.launched && (enemy.x < -50 || enemy.x > canvas.width + 50 || enemy.y < -50 || enemy.y > canvas.height + 50))) {
-					enemies.splice(i, 1);
-					if (circularGroup) {
-						circularGroup.members = circularGroup.members.filter(m => m !== enemy);
-					}
 				}
 			}
 		}
 
 function drawEnemies() {
+    // Draw simple shapes instead of complex images
     enemies.forEach(enemy => {
-        if (enemy.isSpinner) {
-            // Save context for rotation
-            ctx.save();
-            ctx.translate(enemy.x, enemy.y);
-            ctx.rotate(enemy.angle);
-            
-            // Draw the spinner with the image
-            const size = enemy.width * 2.2; // Adjust size as needed
-            
-            // Draw the spinning star image
-            ctx.drawImage(window.spinnerEnemyImage, 
-                -size/2, -size/2,
-                size, size);
-            
-            // If not launched yet, add a pulsing effect
-            if (!enemy.launched) {
-                // Pulsing overlay while charging
-                const pulse = Math.sin(Date.now() / 100) * 0.3 + 0.4;
-                ctx.fillStyle = `rgba(255, 255, 0, ${pulse})`;
-                ctx.globalCompositeOperation = 'overlay';
-                ctx.beginPath();
-                ctx.arc(0, 0, size/2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Restore context
-            ctx.restore();
-        }
-        else if (enemy.isMissile) {
-            // Draw missile...
-			ctx.fillStyle = '#FF3300';
-            ctx.beginPath();
-            // Missile body
-            ctx.moveTo(enemy.x, enemy.y - enemy.height/2);
-            ctx.lineTo(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
-            ctx.lineTo(enemy.x - enemy.width/2, enemy.y + enemy.height/2);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Fire trail
-            ctx.fillStyle = 'orange';
-            ctx.beginPath();
-            ctx.moveTo(enemy.x - enemy.width/4, enemy.y + enemy.height/2);
-            ctx.lineTo(enemy.x, enemy.y + enemy.height);
-            ctx.lineTo(enemy.x + enemy.width/4, enemy.y + enemy.height/2);
-            ctx.closePath();
-            ctx.fill();
-        } 
-        else if (enemy.isCircular) {
-            // Apply rotation for circular enemies
-            ctx.save();
-            ctx.translate(enemy.x, enemy.y);
-            ctx.rotate(enemy.angle);
-            ctx.drawImage(window.circularEnemyImage,           
-                -enemy.width,
-                -enemy.height,
-                enemy.width * 2,
-                enemy.height * 2
-            );
-            ctx.restore();
-        } 
-        else if (enemy.isShooting) {
-            // Apply rotation for shooting enemies
-            ctx.save();
-            ctx.translate(enemy.x, enemy.y);
-            ctx.rotate(enemy.angle);
-            ctx.drawImage(window.shootingEnemyImage,
-                -enemy.width,
-                -enemy.height,
-                enemy.width * 2,
-                enemy.height * 2
-            );
-            ctx.restore();
-        } 
-        else {
-            // Apply rotation for regular enemies
-            ctx.save();
-            ctx.translate(enemy.x, enemy.y);
-            ctx.rotate(enemy.angle);
-            ctx.drawImage(window.enemyImage, 
-                -enemy.width,
-                -enemy.height,
-                enemy.width * 2,
-                enemy.height * 2
-            );
-            ctx.restore();
-        }
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, 15, 0, Math.PI * 2);
+        ctx.fill();
     });
 }
 
