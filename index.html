@@ -52,10 +52,6 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     
-    <div id="gameStats">
-        <div>Score: <span id="score">0</span></div>
-        <div>HP: <span id="hp">100</span></div>
-    </div>
     <div id="startScreen" class="screen">
         <div id="logoContainer"></div>
         <button id="startButton" class="button">Uusi Peli</button>
@@ -521,8 +517,6 @@ function startGame() {
         indicator.remove();
     }
     
-    scoreElement.textContent = score;
-    hpElement.textContent = player.hp;
     
     gameStats.style.display = 'block';
     gameLoop = requestAnimationFrame(update);
@@ -984,7 +978,6 @@ function updateBullets() {
                 
                 if (enemy.hp <= 0) {
                     score += enemy.points;
-                    scoreElement.textContent = score;
                     enemies.splice(j, 1);
                     if (circularGroup) {
                         circularGroup.members = circularGroup.members.filter(m => m !== enemy);
@@ -1013,7 +1006,6 @@ function updateEnemyBullets() {
 			height: player.size
 		})) {
             player.hp -= 5; // Bullet damage
-            hpElement.textContent = player.hp;
             enemyBullets.splice(i, 1);
             
             if (player.hp <= 0) {
@@ -1470,7 +1462,7 @@ function update() {
         
         // Keep player within bounds
         player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
-        player.y = Math.max(canvas.height/3, Math.min(canvas.height - player.size/2, player.y));
+		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
 		} else {
 			// Always allow mouse movement control when player is ready
 			if (playerReady && !isMobile) {
@@ -1646,7 +1638,7 @@ function updatePlayerMovement() {
         
         // Keep player within bounds (for both control methods)
         player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
-        player.y = Math.max(canvas.height/3, Math.min(canvas.height - player.size/2, player.y));
+		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
     }
 }
         // Event listeners
