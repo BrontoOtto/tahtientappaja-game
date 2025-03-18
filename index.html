@@ -88,7 +88,7 @@
 			<!-- Logo will be added here via JavaScript, in the same position as loading screen -->
 		</div>
 		<img src="luke.png" alt="Luke" id="lukeImage" style="max-width: 250px; margin: 20px auto; display: block;">
-		<button id="startButton" class="button">testi27</button>
+		<button id="startButton" class="button">testi28</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -203,26 +203,39 @@ function startLoading() {
     isGameRunning = false;
     
     // Hide all UI screens during loading
-    document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('gameOverScreen').style.display = 'none';
-    document.getElementById('gameStats').style.display = 'none';
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const gameStats = document.getElementById('gameStats');
+    
+    if (startScreen) startScreen.style.display = 'none';
+    if (gameOverScreen) gameOverScreen.style.display = 'none';
+    if (gameStats) gameStats.style.display = 'none';
     
     // Reset asset loading counter
     assetsLoaded = 0;
     
+    // Make sure any previous loading animation is canceled
+    if (loadingLoop) {
+        cancelAnimationFrame(loadingLoop);
+    }
+    
     // Start loading animation
     console.log("Starting loading animation");
     function loadingAnimation() {
+        showLoadingScreen();
         if (currentScreen === "loading") {
-            showLoadingScreen();
             loadingLoop = requestAnimationFrame(loadingAnimation);
         }
     }
+    
+    // Start the animation loop
     loadingLoop = requestAnimationFrame(loadingAnimation);
     
-    // Start loading assets
-    console.log("Starting asset loading");
-    loadAllAssets();
+    // Start loading assets with a slight delay to ensure animation starts
+    setTimeout(function() {
+        console.log("Starting asset loading");
+        loadAllAssets();
+    }, 50);
 }
 function switchScreen(newScreen) {
     console.log(`Switching from ${currentScreen} to ${newScreen}`);
@@ -324,7 +337,7 @@ function loadAllAssets() {
     }, 10000);
     
     if (!window.pendingScreenTimeouts) window.pendingScreenTimeouts = [];
-	window.pendingScreenTimeouts.push(loadingTimeout);
+    window.pendingScreenTimeouts.push(loadingTimeout);
     
     // Simple load function for each image
     function loadImage(img, src) {
@@ -375,20 +388,21 @@ function loadAllAssets() {
         console.error("Audio preload error:", e);
         assetLoaded(); // Count as loaded even if it fails
     }
-	const checkAssetsInterval = setInterval(() => {
-		if (assetsLoaded >= totalAssets) {
-			console.log("All assets loaded via interval check");
-			clearInterval(checkAssetsInterval);
-			
-			// Switch to start screen after a brief delay
-			setTimeout(() => {
-				if (currentScreen === "loading") {
-					isLoading = false;
-					switchScreen("start");
-				}
-			}, 500);
-		}
-	}, 500);
+    
+    // Additional safety check
+    const checkAssetsInterval = setInterval(() => {
+        if (assetsLoaded >= totalAssets) {
+            console.log("All assets loaded via interval check");
+            clearInterval(checkAssetsInterval);
+            
+            // Switch to start screen after a brief delay
+            setTimeout(() => {
+                if (currentScreen === "loading") {
+                    switchScreen("start");
+                }
+            }, 500);
+        }
+    }, 500);
 }
 
 // Add this at the end of your script block
@@ -489,7 +503,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI27...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI28...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -2083,6 +2097,7 @@ function updatePlayerMovement() {
 
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+// Add this safety check at the end of the script
 if (document.readyState === "complete" || document.readyState === "interactive") {
     setTimeout(function() {
         console.log("Document already loaded, initializing manually");
@@ -2096,11 +2111,28 @@ if (document.readyState === "complete" || document.readyState === "interactive")
         window.playerImage = window.playerImage || new Image();
         window.logoImage = window.logoImage || new Image();
         
-        if (typeof startLoading === "function") {
-            startLoading();
-        } else {
-            console.error("startLoading function not found");
-        }
+        // Reset game state before starting
+        isLoading = true;
+        isGameRunning = false;
+        assetsLoaded = 0;
+        
+        // Explicitly clear all screens to start fresh
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const gameStats = document.getElementById('gameStats');
+        
+        if (startScreen) startScreen.style.display = 'none';
+        if (gameOverScreen) gameOverScreen.style.display = 'none';
+        if (gameStats) gameStats.style.display = 'none';
+        
+        // Start loading with a brief delay to ensure DOM is ready
+        setTimeout(function() {
+            if (typeof startLoading === "function") {
+                startLoading();
+            } else {
+                console.error("startLoading function not found");
+            }
+        }, 100);
     }, 200);
 }
     </script>
