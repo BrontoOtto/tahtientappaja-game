@@ -70,7 +70,8 @@
 
 	<div id="startScreen" class="screen">
 		<div id="logoContainer">
-			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px;">
+			<img src="LOGO.png" alt="Logo" style="max-width: 300px; margin-bottom: 20px; display: block;">
+			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px; display: block;">
 		</div>
 		<button id="startButton" class="button">TESTI1</button>
 	</div>
@@ -492,22 +493,11 @@ function showLoadingScreen() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw the logo at the top
-    if (window.logoImage && window.logoImage.complete && window.logoImage.naturalWidth > 0) {
-        const logoWidth = 300;
-        const logoHeight = 150;
-        ctx.drawImage(window.logoImage, 
-            (canvas.width - logoWidth) / 2, 
-            50,
-            logoWidth, 
-            logoHeight);
-    }
-    
     // Draw loading text
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI1', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI5', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
