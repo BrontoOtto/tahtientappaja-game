@@ -84,11 +84,8 @@
 	</div>
 
 	<div id="startScreen" class="screen">
-		<div id="logoContainer">
-			<!-- Logo will be added here via JavaScript, in the same position as loading screen -->
-		</div>
-		<img src="luke.png" alt="Luke" id="lukeImage" style="max-width: 250px; margin: 20px auto; display: block;">
-		<button id="startButton" class="button">testi28</button>
+		<div id="logoContainer"></div>
+		<button id="startButton" class="button">testi29</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -197,45 +194,43 @@ function assetLoaded() {
 // Add this function to properly initialize loading
 function startLoading() {
     console.log("Initializing loading process");
-    // Switch to loading screen explicitly
+    
+    // Reset game state
     currentScreen = "loading";
     isLoading = true;
     isGameRunning = false;
-    
-    // Hide all UI screens during loading
-    const startScreen = document.getElementById('startScreen');
-    const gameOverScreen = document.getElementById('gameOverScreen');
-    const gameStats = document.getElementById('gameStats');
-    
-    if (startScreen) startScreen.style.display = 'none';
-    if (gameOverScreen) gameOverScreen.style.display = 'none';
-    if (gameStats) gameStats.style.display = 'none';
-    
-    // Reset asset loading counter
     assetsLoaded = 0;
     
-    // Make sure any previous loading animation is canceled
-    if (loadingLoop) {
-        cancelAnimationFrame(loadingLoop);
-    }
+    // Force hide all screens
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameOverScreen').style.display = 'none';
+    document.getElementById('gameStats').style.display = 'none';
     
-    // Start loading animation
-    console.log("Starting loading animation");
-    function loadingAnimation() {
+    // Clear any existing animations
+    if (loadingLoop) cancelAnimationFrame(loadingLoop);
+    if (gameLoop) cancelAnimationFrame(gameLoop);
+    
+    // Draw initial black screen
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Set up a simplified loading animation
+    function doLoadingAnimation() {
+        // Only continue if we're still in loading state
+        if (!isLoading) return;
+        
+        // Draw loading screen
         showLoadingScreen();
-        if (currentScreen === "loading") {
-            loadingLoop = requestAnimationFrame(loadingAnimation);
-        }
+        
+        // Continue animation if still loading
+        loadingLoop = requestAnimationFrame(doLoadingAnimation);
     }
     
-    // Start the animation loop
-    loadingLoop = requestAnimationFrame(loadingAnimation);
+    // Start animation
+    loadingLoop = requestAnimationFrame(doLoadingAnimation);
     
-    // Start loading assets with a slight delay to ensure animation starts
-    setTimeout(function() {
-        console.log("Starting asset loading");
-        loadAllAssets();
-    }, 50);
+    // Begin asset loading
+    loadAssets();
 }
 function switchScreen(newScreen) {
     console.log(`Switching from ${currentScreen} to ${newScreen}`);
@@ -317,91 +312,146 @@ function createMobileControls() {
 
 // Fix the loadAllAssets function to use window.enemyImage references:
 // Replace your loadAllAssets function with this improved version:
-function loadAllAssets() {
-    // Reset the counter to make sure we start from 0
+function loadAssets() {
+    console.log("Loading assets...");
+    
+    // Reset counter
     assetsLoaded = 0;
     
-    // Create a timeout safety mechanism
-    const loadingTimeout = setTimeout(() => {
-        console.log("Loading timeout - forcing game to start anyway");
-        // Force set the exact count rather than incrementing
-        assetsLoaded = totalAssets;
-        showLoadingScreen(); // Update the loading screen one last time
+    // Create images if they don't exist
+    window.enemyImage = window.enemyImage || new Image();
+    window.shootingEnemyImage = window.shootingEnemyImage || new Image();
+    window.circularEnemyImage = window.circularEnemyImage || new Image();
+    window.spinnerEnemyImage = window.spinnerEnemyImage || new Image();
+    window.powerupImage = window.powerupImage || new Image();
+    window.bossImage = window.bossImage || new Image();
+    window.playerImage = window.playerImage || new Image();
+    window.logoImage = window.logoImage || new Image();
+    
+    // Load each image one by one
+    const imageSources = [
+        { img: window.enemyImage, src: 'punatahti.png' },
+        { img: window.shootingEnemyImage, src: 'sinitahti.png' },
+        { img: window.circularEnemyImage, src: 'vihertahti.png' },
+        { img: window.spinnerEnemyImage, src: 'keltatahti.png' },
+        { img: window.powerupImage, src: 'powerup1.png' },
+        { img: window.bossImage, src: 'boss.png' },
+        { img: window.playerImage, src: 'luke.png' },
+        { img: window.logoImage, src: 'LOGO.png' }
+    ];
+    
+    // Load each image with its own handler
+    imageSources.forEach(item => {
+        item.img.onload = function() {
+            assetsLoaded++;
+            console.log(`Loaded ${item.src}, ${assetsLoaded}/${totalAssets}`);
+            checkAllAssetsLoaded();
+        };
         
-        // Switch to start screen after a brief delay to show 100%
-        setTimeout(() => {
-            if (currentScreen === "loading") {
-                switchScreen("start");
-            }
-        }, 500);
-    }, 10000);
-    
-    if (!window.pendingScreenTimeouts) window.pendingScreenTimeouts = [];
-    window.pendingScreenTimeouts.push(loadingTimeout);
-    
-    // Simple load function for each image
-    function loadImage(img, src) {
-        img.onload = function() { 
-            assetLoaded(); 
-            this.onload = null; 
+        item.img.onerror = function() {
+            console.error(`Failed to load ${item.src}`);
+            assetsLoaded++;
+            checkAllAssetsLoaded();
         };
-        img.onerror = function() { 
-            console.error("Failed to load image:", src);
-            assetLoaded(); 
-            this.onerror = null; 
-        };
-        img.src = src;
-    }
+        
+        // Set source to trigger loading
+        item.img.src = item.src;
+    });
     
-    // Load all images
-    loadImage(window.enemyImage, 'punatahti.png');
-    loadImage(window.shootingEnemyImage, 'sinitahti.png');
-    loadImage(window.circularEnemyImage, 'vihertahti.png');
-    loadImage(window.spinnerEnemyImage, 'keltatahti.png');
-    loadImage(window.powerupImage, 'powerup1.png');
-    loadImage(window.bossImage, 'boss.png');
-    loadImage(window.playerImage, 'luke.png');
-    loadImage(window.logoImage, 'LOGO.png');
-    
-    // Audio loading with simplified approach
+    // Handle audio
     try {
-        const tempAudio = new Audio();
-        tempAudio.addEventListener('canplaythrough', function() {
-            assetLoaded();
+        backgroundMusic = new Audio('tappaja.mp3');
+        backgroundMusic.addEventListener('canplaythrough', function() {
+            assetsLoaded++;
+            console.log("Audio loaded");
+            checkAllAssetsLoaded();
         }, {once: true});
         
-        tempAudio.addEventListener('error', function() {
-            console.log("Audio preload error - continuing anyway");
-            assetLoaded();
+        backgroundMusic.addEventListener('error', function() {
+            console.error("Audio failed to load");
+            assetsLoaded++;
+            checkAllAssetsLoaded();
         }, {once: true});
         
-        // Shorter timeout for audio
+        // Set timeout in case audio never loads
         setTimeout(() => {
-            if (assetsLoaded === totalAssets - 1) {
-                console.log("Audio timeout - continuing anyway");
-                assetLoaded();
+            if (assetsLoaded < totalAssets) {
+                console.log("Audio loading timed out, continuing anyway");
+                assetsLoaded = totalAssets;
+                checkAllAssetsLoaded();
             }
-        }, 2000);
-        
-        tempAudio.src = 'tappaja.mp3';
+        }, 3000);
     } catch (e) {
-        console.error("Audio preload error:", e);
-        assetLoaded(); // Count as loaded even if it fails
+        console.error("Audio load error:", e);
+        assetsLoaded++;
+        checkAllAssetsLoaded();
     }
     
-    // Additional safety check
-    const checkAssetsInterval = setInterval(() => {
+    // Function to check if loading is complete
+    function checkAllAssetsLoaded() {
         if (assetsLoaded >= totalAssets) {
-            console.log("All assets loaded via interval check");
-            clearInterval(checkAssetsInterval);
-            
-            // Switch to start screen after a brief delay
-            setTimeout(() => {
-                if (currentScreen === "loading") {
-                    switchScreen("start");
-                }
-            }, 500);
+            console.log("All assets loaded!");
+            completeLoading();
         }
+    }
+    
+    // Set absolute timeout
+    setTimeout(() => {
+        if (isLoading) {
+            console.log("Loading timed out, forcing completion");
+            completeLoading();
+        }
+    }, 8000);
+}
+
+// Function to finish loading and show start screen
+function completeLoading() {
+    console.log("Completing loading process");
+    
+    // Stop loading animation
+    if (loadingLoop) {
+        cancelAnimationFrame(loadingLoop);
+        loadingLoop = null;
+    }
+    
+    // Clear canvas
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add a short delay before showing start screen
+    setTimeout(() => {
+        isLoading = false;
+        
+        // Set up logo and Luke on the start screen
+        const logoContainer = document.getElementById('logoContainer');
+        if (logoContainer) {
+            logoContainer.innerHTML = '';
+            const logo = document.createElement('img');
+            logo.src = 'LOGO.png';
+            logo.style.width = '300px';
+            logo.style.display = 'block';
+            logo.style.margin = '0 auto 20px auto';
+            logoContainer.appendChild(logo);
+        }
+        
+        // Find/create Luke image
+        let lukeImg = document.getElementById('lukeImage');
+        if (!lukeImg) {
+            lukeImg = document.createElement('img');
+            lukeImg.id = 'lukeImage';
+            lukeImg.src = 'luke.png';
+            lukeImg.style.maxWidth = '250px';
+            lukeImg.style.display = 'block';
+            lukeImg.style.margin = '20px auto';
+            const startScreen = document.getElementById('startScreen');
+            if (startScreen) {
+                startScreen.insertBefore(lukeImg, document.getElementById('startButton'));
+            }
+        }
+        
+        // Show start screen
+        document.getElementById('startScreen').style.display = 'block';
+        currentScreen = "start";
     }, 500);
 }
 
@@ -503,7 +553,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI28...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI29...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -2100,40 +2150,9 @@ function updatePlayerMovement() {
 // Add this safety check at the end of the script
 if (document.readyState === "complete" || document.readyState === "interactive") {
     setTimeout(function() {
-        console.log("Document already loaded, initializing manually");
-        // Initialize images if they don't exist
-        window.enemyImage = window.enemyImage || new Image();
-        window.shootingEnemyImage = window.shootingEnemyImage || new Image();
-        window.circularEnemyImage = window.circularEnemyImage || new Image();
-        window.spinnerEnemyImage = window.spinnerEnemyImage || new Image();
-        window.powerupImage = window.powerupImage || new Image();
-        window.bossImage = window.bossImage || new Image();
-        window.playerImage = window.playerImage || new Image();
-        window.logoImage = window.logoImage || new Image();
-        
-        // Reset game state before starting
-        isLoading = true;
-        isGameRunning = false;
-        assetsLoaded = 0;
-        
-        // Explicitly clear all screens to start fresh
-        const startScreen = document.getElementById('startScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const gameStats = document.getElementById('gameStats');
-        
-        if (startScreen) startScreen.style.display = 'none';
-        if (gameOverScreen) gameOverScreen.style.display = 'none';
-        if (gameStats) gameStats.style.display = 'none';
-        
-        // Start loading with a brief delay to ensure DOM is ready
-        setTimeout(function() {
-            if (typeof startLoading === "function") {
-                startLoading();
-            } else {
-                console.error("startLoading function not found");
-            }
-        }, 100);
-    }, 200);
+        console.log("Document already loaded, initializing game...");
+        startLoading();
+    }, 300);
 }
     </script>
 	<script>
