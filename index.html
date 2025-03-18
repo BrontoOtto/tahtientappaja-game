@@ -31,15 +31,31 @@
 		}
         .screen {
 			position: fixed;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			background: rgba(0, 0, 0, 0.8);
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 1); /* Fully opaque black background */
 			padding: 20px;
 			color: white;
 			text-align: center;
-			z-index: 100; // Make sure screens have proper z-index
-			display: none; // Hidden by default
+			z-index: 100; /* Make sure screens have proper z-index */
+			display: none; /* Hidden by default */
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#logoContainer {
+			width: 100%;
+			height: 150px;
+			position: relative;
+			margin-bottom: 20px;
+		}
+
+		#lukeContainer {
+			margin-bottom: 20px;
 		}
 
 		#startScreen {
@@ -81,10 +97,12 @@
 
 	<div id="startScreen" class="screen">
 		<div id="logoContainer">
-			<img src="LOGO.png" alt="Logo" style="width: 300px; height: 150px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
-			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+			<!-- Logo will be drawn by JS to match loading screen -->
 		</div>
-		<button id="startButton" class="button">TESTI3</button>
+		<div id="lukeContainer">
+			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px;">
+		</div>
+		<button id="startButton" class="button">TESTI4</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -94,29 +112,43 @@
 	</div>
     <script>
 // Asset loading handler
+let loadingStartTime = 0;
+const minLoadingDisplayTime = 2000; // 2 seconds in milliseconds
 // Modify your assetLoaded function to handle the transition better
 function assetLoaded() {
     assetsLoaded++;
     console.log("Asset loaded. Total: " + assetsLoaded + "/" + totalAssets);
     
-    // If all assets are loaded, switch to start screen
+    // If all assets are loaded, prepare to switch to start screen
     if (assetsLoaded >= totalAssets) {
-        console.log("All assets loaded, switching to start screen");
+        console.log("All assets loaded, preparing to switch to start screen");
         
-        // Make sure we stop the loading animation
-        if (loadingLoop) {
-            cancelAnimationFrame(loadingLoop);
-            loadingLoop = null;
-        }
+        // Calculate how long the loading screen has been shown
+        const timeElapsed = Date.now() - loadingStartTime;
+        let remainingTime = Math.max(0, minLoadingDisplayTime - timeElapsed);
         
-        // Final clear of the canvas to remove loading screen
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+        // If we've shown the loading screen for less than minLoadingDisplayTime,
+        // wait until we reach that threshold
         setTimeout(() => {
+            // Make sure we stop the loading animation
+            if (loadingLoop) {
+                cancelAnimationFrame(loadingLoop);
+                loadingLoop = null;
+            }
+            
+            // Switch to start screen
             switchScreen("start");
-        }, 500);
+        }, remainingTime);
     }
+}
+
+// Also update startLoading to record the start time
+function startLoading() {
+    console.log("Initializing loading process");
+    // Record when we started loading
+    loadingStartTime = Date.now();
+    
+    // Rest of the function remains the same...
 }
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -243,6 +275,37 @@ function startLoading() {
     console.log("Starting asset loading");
     loadAllAssets();
 }
+function drawLogoOnStartScreen() {
+    // Create a canvas for the logo
+    const logoCanvas = document.createElement('canvas');
+    const logoContainer = document.getElementById('logoContainer');
+    
+    if (!logoContainer) return;
+    
+    // Clear any existing content
+    logoContainer.innerHTML = '';
+    
+    // Set canvas dimensions to match the container
+    logoCanvas.width = canvas.width;
+    logoCanvas.height = window.logoDisplayInfo ? window.logoDisplayInfo.height + 20 : 150;
+    
+    // Append the canvas to the container
+    logoContainer.appendChild(logoCanvas);
+    
+    // Get the context and draw the logo
+    const logoCtx = logoCanvas.getContext('2d');
+    
+    if (window.logoImage && window.logoImage.complete && window.logoDisplayInfo) {
+        // Draw using the exact same dimensions as in the loading screen
+        logoCtx.drawImage(
+            window.logoImage,
+            window.logoDisplayInfo.x,
+            0, // Position at top of this canvas
+            window.logoDisplayInfo.width,
+            window.logoDisplayInfo.height
+        );
+    }
+}
 function switchScreen(newScreen) {
     console.log(`Switching from ${currentScreen} to ${newScreen}`);
     
@@ -281,7 +344,10 @@ function switchScreen(newScreen) {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         if (startScreen) {
-            startScreen.style.display = 'block';
+            startScreen.style.display = 'flex'; // Use flex instead of block
+            
+            // Draw the logo on the start screen
+            drawLogoOnStartScreen();
         }
     } 
     else if (newScreen === "game") {
@@ -504,26 +570,36 @@ function showLoadingScreen() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw the logo at the top
+    // Draw the logo at the top - use relative sizing
     if (window.logoImage && window.logoImage.complete && window.logoImage.naturalWidth > 0) {
-        const logoWidth = 300;
-        const logoHeight = 150;
+        const logoWidth = canvas.width * 0.75; // 75% of canvas width
+        const logoHeight = logoWidth / 2; // Maintain aspect ratio
+        const logoY = canvas.height * 0.1; // 10% from top
+        
         ctx.drawImage(window.logoImage, 
             (canvas.width - logoWidth) / 2, 
-            50,
+            logoY,
             logoWidth, 
             logoHeight);
+            
+        // Store these values for later use by the start screen
+        window.logoDisplayInfo = {
+            x: (canvas.width - logoWidth) / 2,
+            y: logoY,
+            width: logoWidth,
+            height: logoHeight
+        };
     }
     
     // Draw loading text
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI3', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI4', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
-    const barWidth = 200;
+    const barWidth = canvas.width * 0.5; // 50% of canvas width
     const barHeight = 20;
     ctx.fillRect(canvas.width / 2 - barWidth / 2, canvas.height / 2, barWidth, barHeight);
     
