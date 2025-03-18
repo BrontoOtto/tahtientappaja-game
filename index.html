@@ -18,6 +18,17 @@
             border: 2px solid #333;
 			touch-action: none;
         }
+		#logoContainer {
+			margin-top: 20px;
+			margin-bottom: 30px;
+			text-align: center;
+		}
+
+		#logoContainer img {
+			width: 300px;
+			height: 150px;
+			max-width: 100%;
+		}
         .screen {
 			position: fixed;
 			top: 50%;
@@ -70,9 +81,9 @@
 
 	<div id="startScreen" class="screen">
 		<div id="logoContainer">
-			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px;">
+			<img src="LOGO.png" alt="Logo" style="max-width: 300px; margin-bottom: 20px;">
 		</div>
-		<button id="startButton" class="button">TESTI1</button>
+		<button id="startButton" class="button">TESTI2</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -507,7 +518,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI1', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI2', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
