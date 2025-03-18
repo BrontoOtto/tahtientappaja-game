@@ -72,7 +72,7 @@
 		<div id="logoContainer">
 			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px;">
 		</div>
-		<button id="startButton" class="button">TESTI25</button>
+		<button id="startButton" class="button">TESTI26</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -90,6 +90,16 @@ function assetLoaded() {
     // If all assets are loaded, switch to start screen
     if (assetsLoaded >= totalAssets) {
         console.log("All assets loaded, switching to start screen");
+        
+        // Make sure we stop the loading animation
+        if (loadingLoop) {
+            cancelAnimationFrame(loadingLoop);
+            loadingLoop = null;
+        }
+        
+        // Final clear of the canvas to remove loading screen
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         setTimeout(() => {
             switchScreen("start");
@@ -207,7 +217,7 @@ function switchScreen(newScreen) {
         loadingLoop = null;
     }
     
-    // Hide all screens first
+    // Hide all screens
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
     const gameStats = document.getElementById('gameStats');
@@ -216,7 +226,7 @@ function switchScreen(newScreen) {
     if (gameOverScreen) gameOverScreen.style.display = 'none';
     if (gameStats) gameStats.style.display = 'none';
     
-    // Then show the appropriate screen
+    // Show appropriate screen
     if (newScreen === "loading") {
         isLoading = true;
         isGameRunning = false;
@@ -230,6 +240,10 @@ function switchScreen(newScreen) {
     else if (newScreen === "start") {
         isLoading = false;
         isGameRunning = false;
+        
+        // Clear the canvas to remove any loading screen visuals
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         if (startScreen) {
             startScreen.style.display = 'block';
@@ -460,7 +474,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI25...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI26...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1556,6 +1570,9 @@ function update() {
 
     // If the game is not running, we shouldn't be in this function
     if (!isGameRunning) {
+        // Clear the canvas with black to ensure no remnants of loading screen
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         return;
     }
     
@@ -2083,6 +2100,7 @@ if (document.readyState === "complete" || document.readyState === "interactive")
             console.log("- Game Over Screen:", document.getElementById('gameOverScreen'));
             
             // Add visible debug info
+			/*
             setTimeout(function() {
                 if (!isGameRunning) {
                     // Add emergency start button if game isn't running
@@ -2097,6 +2115,7 @@ if (document.readyState === "complete" || document.readyState === "interactive")
                     console.log("Added emergency start button");
                 }
             }, 5000);
+			*/
         });
     </script>
 </body>
