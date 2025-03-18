@@ -18,6 +18,21 @@
             border: 2px solid #333;
 			touch-action: none;
         }
+		#startScreen {
+			width: 80%;
+			max-width: 400px;
+			text-align: center;
+		}
+
+		#logoContainer {
+			margin-bottom: 20px;
+		}
+
+		#lukeImage {
+			max-width: 250px;
+			margin: 20px auto;
+			display: block;
+		}
         .screen {
 			position: fixed;
 			top: 50%;
@@ -70,9 +85,10 @@
 
 	<div id="startScreen" class="screen">
 		<div id="logoContainer">
-			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px;">
+			<!-- Logo will be added here via JavaScript, in the same position as loading screen -->
 		</div>
-		<button id="startButton" class="button">TESTI26</button>
+		<img src="luke.png" alt="Luke" id="lukeImage" style="max-width: 250px; margin: 20px auto; display: block;">
+		<button id="startButton" class="button">testi27</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -238,34 +254,33 @@ function switchScreen(newScreen) {
         });
     } 
     else if (newScreen === "start") {
-        isLoading = false;
-        isGameRunning = false;
-        
-        // Clear the canvas to remove any loading screen visuals
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        if (startScreen) {
-            startScreen.style.display = 'block';
-        }
-    } 
-    else if (newScreen === "game") {
-        isLoading = false;
-        isGameRunning = true;
-        
-        if (gameStats) {
-            gameStats.style.display = 'block';
-        }
-    } 
-    else if (newScreen === "gameOver") {
-        isLoading = false;
-        isGameRunning = false;
-        
-        if (gameOverScreen) {
-            gameOverScreen.style.display = 'block';
-        }
-    }
-    
+		isLoading = false;
+		isGameRunning = false;
+		
+		// Clear the canvas to remove any loading screen visuals
+		ctx.fillStyle = 'black';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		
+		if (startScreen) {
+			// Add the logo to the start screen in the same position as loading screen
+			const logoContainer = document.getElementById('logoContainer');
+			if (logoContainer) {
+				logoContainer.innerHTML = ''; // Clear existing content
+				if (window.logoImage && window.logoImage.complete) {
+					const logoImg = document.createElement('img');
+					logoImg.src = 'LOGO.png';
+					logoImg.style.width = '300px';
+					logoImg.style.marginBottom = '20px';
+					logoImg.style.display = 'block';
+					logoImg.style.margin = '0 auto';
+					logoContainer.appendChild(logoImg);
+				}
+			}
+			
+			startScreen.style.display = 'block';
+		}
+	}
+		
     currentScreen = newScreen;
 }
 
@@ -474,7 +489,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI26...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI27...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
