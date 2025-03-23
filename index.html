@@ -1649,7 +1649,7 @@ function update() {
     gameTime += deltaTime / 1000; // Convert to seconds
     
     // Check for boss spawn at 3:30 (210 seconds)
-    if (gameTime >= 180 && !bossSpawned) {
+    if (gameTime >= 30 && !bossSpawned) {
 		// Stop enemy spawning 9 seconds before boss appears
 		regularEnemiesDisabled = true;
 	}
