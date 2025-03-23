@@ -76,7 +76,7 @@
 			<img src="LOGO.png" alt="Logo" style="max-width: 300px; margin-bottom: 20px; display: block;">
 			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px; display: block;">
 		</div>
-		<button id="startButton" class="button">TESTI6</button>
+		<button id="startButton" class="button">TESTI7</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -205,6 +205,8 @@ function assetLoaded() {
 		let bossAnimationFrame = 0;
 		let bossAnimationTimer = 0;
 		const bossFrameCount = 6; // Your Piskel has 6 frames
+		const bossFrameWidth = 250; // Width of each frame in pixels
+		const bossFrameHeight = 250; // Height of each frame in pixels
 		const bossFrameDuration = 100; // Milliseconds per frame (adjust for speed)
 		let lastBossMissile = 0;
 		const bossMissileDelay = 5000; // 10 seconds
@@ -504,7 +506,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI6', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -971,14 +973,14 @@ function restartGame() {
 			
 			// Draw boss with animation
 			if (window.bossImage.complete) {
-				// Calculate the source x position based on current frame
-				const frameWidth = window.bossImage.width / bossFrameCount;
-				const sourceX = bossAnimationFrame * frameWidth;
+				// Calculate the source y position based on current frame
+				// For vertical sprite sheet, x stays at 0 but y changes
+				const sourceY = bossAnimationFrame * bossFrameHeight;
 				
 				// Draw the current frame
 				ctx.drawImage(
 					window.bossImage,
-					sourceX, 0, frameWidth, window.bossImage.height, // Source rectangle
+					0, sourceY, bossFrameWidth, bossFrameHeight, // Source rectangle (x, y, width, height)
 					boss.x - boss.width/2, boss.y - boss.height/2,   // Destination position
 					boss.width, boss.height                         // Destination size
 				);
