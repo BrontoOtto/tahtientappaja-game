@@ -1649,12 +1649,12 @@ function update() {
     gameTime += deltaTime / 1000; // Convert to seconds
     
     // Check for boss spawn at 3:30 (210 seconds)
-    if (gameTime >= 30 && !bossSpawned) {
+    if (gameTime >= 15 && !bossSpawned) {
 		// Stop enemy spawning 9 seconds before boss appears
 		regularEnemiesDisabled = true;
 	}
 
-	if (gameTime >= 189 && !bossSpawned) {
+	if (gameTime >= 15 && !bossSpawned) {
 		// Clear all existing enemies
 		enemies.length = 0;
 		enemyBullets.length = 0;
