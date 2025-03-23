@@ -76,7 +76,7 @@
 			<img src="LOGO.png" alt="Logo" style="max-width: 300px; margin-bottom: 20px; display: block;">
 			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px; display: block;">
 		</div>
-		<button id="startButton" class="button">TESTI3</button>
+		<button id="startButton" class="button">TESTI4</button>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
@@ -500,7 +500,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI3', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI4', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -765,42 +765,65 @@ function startGame() {
     }
 }
 function restartGame() {
-            isGameRunning = true;
-            score = 0;
-			gameTime = 0;
-			lastTimeCheck = Date.now();
-			bossSpawned = false;
-			regularEnemiesDisabled = false;
-			boss = null;
-			explosionAnimation = null; // Make sure this is here
-			
-            player.hp = player.maxHp;
-            player.bullets = [];
-            enemies.length = 0;
-            enemyBullets.length = 0;
-            circularGroup = null;
-            lastGroupSpawn = Date.now();
-									// Add these lines to both the startGame and restartGame functions
-			powerupActive = false;
-			powerupBulletsLeft = 0;
-			powerup = null;
-			powerupSpawned = false;
-			reachedMilestones = [false, false, false, false];
+    isGameRunning = true;
+    score = 0;
+    gameTime = 0;
+    lastTimeCheck = Date.now();
+    bossSpawned = false;
+    regularEnemiesDisabled = false;
+    boss = null;
+    explosionAnimation = null; // Make sure this is here
+    
+    // Reset player position to match initial game start
+    player.y = canvas.height + 100; // Start below the screen
+    player.x = canvas.width / 2;    // Center horizontally
+    player.hp = player.maxHp;
+    player.bullets = [];
+    
+    // Set up game start sequence like in startGame
+    gameStartSequence = true;
+    playerReady = false;
+    enemySpawningActive = false;
+    
+    // Make player invulnerable for the first 3 seconds
+    playerInvulnerable = true;
+    playerInvulnerableTimer = Date.now();
+    
+    enemies.length = 0;
+    enemyBullets.length = 0;
+    circularGroup = null;
+    lastGroupSpawn = Date.now();
+    
+    // Reset powerups
+    powerupActive = false;
+    powerupBulletsLeft = 0;
+    powerup = null;
+    powerupSpawned = false;
+    reachedMilestones = [false, false, false, false];
 
-			// Remove any existing powerup indicator
-			const indicator = document.getElementById('powerupIndicator');
-			if (indicator) {
-				indicator.remove();
-			}
-
-            
-            scoreElement.textContent = score;
-            hpElement.textContent = player.hp;
-            
-            gameOverScreen.style.display = 'none';
-            gameStats.style.display = 'block';
-            gameLoop = requestAnimationFrame(update);
-        }
+    // Remove any existing powerup indicator
+    const indicator = document.getElementById('powerupIndicator');
+    if (indicator) {
+        indicator.remove();
+    }
+    
+    scoreElement.textContent = score;
+    hpElement.textContent = player.hp;
+    
+    gameOverScreen.style.display = 'none';
+    gameStats.style.display = 'block';
+    
+    // Enable player control and enemy spawning after delay - just like in startGame
+    setTimeout(() => {
+        playerReady = true;
+    }, 4000); // 4 seconds
+    
+    setTimeout(() => {
+        enemySpawningActive = true;
+    }, 5000); // 5 seconds
+    
+    gameLoop = requestAnimationFrame(update);
+}
 		// Add this function to spawn the boss
 		function spawnBoss() {
 			bossSpawned = true;
