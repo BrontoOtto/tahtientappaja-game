@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Tahtien Tappaja</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <style>
         body {
             margin: 0;
@@ -23,12 +23,19 @@
 			top: 50%;
 			left: 50%;
 			transform: translate(-50%, -50%);
-			background: rgba(0, 0, 0, 0.8);
+			background: rgba(16, 22, 78, 0.4); /* Make background semi-transparent */
 			padding: 20px;
 			color: white;
 			text-align: center;
-			z-index: 100; // Make sure screens have proper z-index
-			display: none; // Hidden by default
+			z-index: 100;
+			display: none;
+		}
+		#logoContainer {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
 		}
 
 		#startScreen {
@@ -73,8 +80,8 @@
 
 	<div id="startScreen" class="screen">
 		<div id="logoContainer">
-			<img src="LOGO.png" alt="Logo" style="max-width: 300px; margin-bottom: 20px; display: block;">
-			<img src="luke.png" alt="Luke" style="max-width: 200px; margin-bottom: 20px; display: block;">
+			<img src="LOGO.png" alt="Logo" style="max-width: 300px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+			<canvas id="characterAnimCanvas" width="250" height="250" style="margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;"></canvas>
 		</div>
 		<button id="startButton" class="button">TESTI7</button>
 	</div>
@@ -155,7 +162,7 @@ function assetLoaded() {
         // Game state global variables
 		let currentScreen = "loading";
 		let loadingLoop;
-		let totalAssets = 9; // Increased by 1 to include the logo
+		let totalAssets = 10; // Increased by 1 to include the logo
 		let keys = {}; // Track pressed keys
 		let isMobile = false; // Will be set based on device detection
 		let joystick = {
@@ -184,6 +191,16 @@ function assetLoaded() {
 		let isLoading = true;
 		let backgroundMusic = null;
 		let isBackgroundMusicPlaying = false;
+		// Main screen stars
+		const mainScreenStars = [];
+		const NUM_MAIN_SCREEN_STARS = 50;
+		let mainScreenStarsAnimationId = null;
+		let mainCharacterAnimFrame = 0;
+		let mainCharacterAnimTimer = 0;
+		const mainCharacterFrameCount = 4; // Your animation has 4 frames
+		const mainCharacterFrameWidth = 250; // Width of each frame in pixels
+		const mainCharacterFrameHeight = 1000; // Height of each frame in pixels
+		const mainCharacterFrameDuration = 150; // Milliseconds per frame (adjust for speed)
 		let powerupActive = false;
 		let powerupBulletsLeft = 0;
 		let powerup = null;
@@ -243,6 +260,11 @@ function startLoading() {
 }
 function switchScreen(newScreen) {
     console.log(`Switching from ${currentScreen} to ${newScreen}`);
+	// Cancel star animation if switching away from start screen
+    if (currentScreen === "start" && newScreen !== "start" && mainScreenStarsAnimationId) {
+        cancelAnimationFrame(mainScreenStarsAnimationId);
+        mainScreenStarsAnimationId = null;
+    }
     
     // Cancel any loading animation
     if (loadingLoop) {
@@ -271,17 +293,27 @@ function switchScreen(newScreen) {
         });
     } 
     else if (newScreen === "start") {
-        isLoading = false;
-        isGameRunning = false;
-        
-        // Clear the canvas to remove any loading screen visuals
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        if (startScreen) {
-            startScreen.style.display = 'block';
-        }
-    } 
+		isLoading = false;
+		isGameRunning = false;
+		
+		// Draw background with stars first
+		ctx.fillStyle = '#10164e';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		
+		// Initialize stars before showing the UI
+		initializeMainScreenStars();
+		mainScreenStarsAnimationId = requestAnimationFrame(updateAndDrawMainScreenStars);
+		
+		// Then show the UI
+		if (startScreen) {
+			startScreen.style.display = 'block';
+		}
+		
+		// Start main character animation
+		mainCharacterAnimFrame = 0;
+		mainCharacterAnimTimer = Date.now();
+		requestAnimationFrame(animateMainCharacter);
+	} 
     else if (newScreen === "game") {
         isLoading = false;
         isGameRunning = true;
@@ -309,17 +341,20 @@ function detectMobile() {
 function createMobileControls() {
     // Position the joystick in the bottom left using relative positioning
     joystick.baseX = canvas.width * 0.20; // 20% from left edge
-    joystick.baseY = canvas.height * 0.90; // 80% from top (20% from bottom)
+    joystick.baseY = canvas.height * 0.85; // 85% from top (15% from bottom)
     joystick.knobX = joystick.baseX;
     joystick.knobY = joystick.baseY;
-    joystick.maxDistance = Math.min(canvas.width, canvas.height) * 0.15; // Relative distance
-    joystick.radius = Math.min(canvas.width, canvas.height) * 0.12; // Relative size
-    joystick.knobRadius = joystick.radius * 0.5; // Proportional to base
     
-    // Position the fire button in the bottom right using relative positioning
+    // Scale joystick size based on canvas dimensions
+    const minDimension = Math.min(canvas.width, canvas.height * 0.3);
+    joystick.radius = minDimension * 0.15; // 15% of the smaller dimension
+    joystick.knobRadius = joystick.radius * 0.5; // Proportional to base
+    joystick.maxDistance = joystick.radius * 1.2; // Slightly larger than radius
+    
+    // Position the fire button in the bottom right
     fireButton.x = canvas.width * 0.80; // 80% from left edge
-    fireButton.y = canvas.height * 0.90; // 80% from top
-    fireButton.radius = Math.min(canvas.width, canvas.height) * 0.12; // Relative size
+    fireButton.y = canvas.height * 0.85; // 85% from top
+    fireButton.radius = joystick.radius; // Same size as joystick for consistency
 }
 
 // Fix the loadAllAssets function to use window.enemyImage references:
@@ -369,6 +404,7 @@ function loadAllAssets() {
     loadImage(window.bossImage, 'boss.png');
     loadImage(window.playerImage, 'luke.png');
     loadImage(window.logoImage, 'LOGO.png');
+	loadImage(window.mainCharacterAnimImage, 'alkuanim.png');
     
     // Audio loading with simplified approach
     try {
@@ -424,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.bossImage = new Image();
     window.playerImage = new Image();
     window.logoImage = new Image();
+	window.mainCharacterAnimImage = new Image();
     
     // Resize canvas to fit the device screen
     resizeCanvas();
@@ -692,10 +729,70 @@ function endGame() {
 				ctx.restore();
 			});
 		}
-		// Mouse state
-        let mouseX = 0;
-		let mouseY = 0;
-        let isMouseDown = false;
+function initializeMainScreenStars() {
+    // Clear existing stars
+    mainScreenStars.length = 0;
+    
+    // Create new stars
+    for (let i = 0; i < NUM_MAIN_SCREEN_STARS; i++) {
+        mainScreenStars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2 + 0.5, // Stars of different sizes (0.5 to 2.5)
+            speedX: (Math.random() * 0.2) - 0.1, // Very slow diagonal movement
+            speedY: Math.random() * 0.1 + 0.05,  // Slow downward movement
+            angle: Math.random() * Math.PI * 2,  // Random starting rotation
+            rotationSpeed: 0.01 + (Math.random() * 0.01) // Small rotation speed
+        });
+    }
+}
+function updateAndDrawMainScreenStars() {
+    if (currentScreen !== "start") {
+        // If we're not on the start screen, cancel the animation
+        if (mainScreenStarsAnimationId) {
+            cancelAnimationFrame(mainScreenStarsAnimationId);
+            mainScreenStarsAnimationId = null;
+        }
+        return;
+    }
+    
+    // Clear the entire canvas with the background color
+    ctx.fillStyle = '#10164e';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Update and draw stars - make them brighter for better visibility
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // Increased opacity for visibility
+    mainScreenStars.forEach(star => {
+        // Update position
+        star.x += star.speedX;
+        star.y += star.speedY;
+        star.angle += star.rotationSpeed;
+        
+        // Wrap around if off screen
+        if (star.x < 0) star.x = canvas.width;
+        if (star.x > canvas.width) star.x = 0;
+        if (star.y > canvas.height) star.y = 0;
+        
+        // Draw the star (using the same style as game stars but slightly larger)
+        ctx.save();
+        ctx.translate(star.x, star.y);
+        ctx.rotate(star.angle);
+        
+        // Draw a simple plus shape - make it larger for better visibility
+        const size = star.size * 3; // Increased size
+        
+        // Horizontal line
+        ctx.fillRect(-size, -size/4, size*2, size/2);
+        
+        // Vertical line
+        ctx.fillRect(-size/4, -size, size/2, size*2);
+        
+        ctx.restore();
+    });
+    
+    // Continue the animation
+    mainScreenStarsAnimationId = requestAnimationFrame(updateAndDrawMainScreenStars);
+}
 function startGame() {
     console.log("Start game function called!");
     
@@ -1017,6 +1114,40 @@ function restartGame() {
 			ctx.fillStyle = `rgb(${255 * (1 - hpPercentage)}, ${255 * hpPercentage}, 0)`;
 			ctx.fillRect(boss.x - hpBarWidth/2, boss.y - boss.height/2 - 15, hpBarWidth * hpPercentage, hpBarHeight);
 		}
+// Add this function to animate the main character on the start screen
+function animateMainCharacter() {
+    if (currentScreen !== "start") return;
+    
+    const animCanvas = document.getElementById('characterAnimCanvas');
+    if (!animCanvas) return;
+    
+    const animCtx = animCanvas.getContext('2d');
+    
+    // Update animation frame
+    const now = Date.now();
+    if (now - mainCharacterAnimTimer > mainCharacterFrameDuration) {
+        mainCharacterAnimFrame = (mainCharacterAnimFrame + 1) % mainCharacterFrameCount;
+        mainCharacterAnimTimer = now;
+    }
+    
+    // Clear the canvas - don't clear it here as we're using the stars as background
+    animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+    
+    // Draw the current frame if image is loaded
+    if (window.mainCharacterAnimImage.complete) {
+        // Draw the current frame from the sprite sheet
+        animCtx.drawImage(
+            window.mainCharacterAnimImage,
+            0, mainCharacterAnimFrame * (mainCharacterFrameHeight / mainCharacterFrameCount), 
+            mainCharacterFrameWidth, mainCharacterFrameHeight / mainCharacterFrameCount,
+            0, 0,
+            animCanvas.width, animCanvas.height
+        );
+    }
+    
+    // Continue animation
+    requestAnimationFrame(animateMainCharacter);
+}
         function endGame() {
             isGameRunning = false;
             cancelAnimationFrame(gameLoop);
@@ -1616,7 +1747,7 @@ function drawEnemies() {
 }
 
 function drawBullets() {
-    ctx.fillStyle = 'FFF';
+    ctx.fillStyle = '#4CAF50'; // Always use green (#4CAF50) for player bullets
     player.bullets.forEach(bullet => {
         ctx.fillRect(bullet.x - bullet.width/2, bullet.y, bullet.width * 1.5, bullet.height * 1.5);
     });
@@ -1651,12 +1782,12 @@ function update() {
     gameTime += deltaTime / 1000; // Convert to seconds
     
     // Check for boss spawn at 3:30 (210 seconds)
-    if (gameTime >= 15 && !bossSpawned) {
+    if (gameTime >= 189 && !bossSpawned) {
 		// Stop enemy spawning 9 seconds before boss appears
 		regularEnemiesDisabled = true;
 	}
 
-	if (gameTime >= 15 && !bossSpawned) {
+	if (gameTime >= 180 && !bossSpawned) {
 		// Clear all existing enemies
 		enemies.length = 0;
 		enemyBullets.length = 0;
@@ -1688,35 +1819,40 @@ function update() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Add enhanced UI elements - using canvas drawing for consistent display across all devices
+	// Update the update() function, around line 2090 where the UI elements are drawn
+	// Replace the UI drawing code with this:
+
+	// Add enhanced UI elements - using canvas drawing for consistent display across all devices
 	ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-	ctx.fillRect(0, 0, canvas.width, 40); // Top bar for stats
+	const statusBarHeight = Math.max(40, canvas.height * 0.06); // Min 40px or 6% of height
+	ctx.fillRect(0, 0, canvas.width, statusBarHeight); // Top bar for stats
 
 	// Make score more prominent
 	ctx.fillStyle = '#4CAF50';
-	ctx.font = 'bold 18px Arial';
+	ctx.font = `bold ${Math.max(14, statusBarHeight * 0.45)}px Arial`; // Scale font size
 	ctx.textAlign = 'left';
-	ctx.fillText(`Score: ${score}`, 10, 25);
+	ctx.fillText(`Score: ${score}`, 10, statusBarHeight * 0.65);
 
 	// Display Powerup status if active
 	if (powerupActive) {
 		ctx.fillStyle = 'yellow';
-		ctx.font = 'bold 18px Arial';
+		ctx.font = `bold ${Math.max(14, statusBarHeight * 0.45)}px Arial`;
 		ctx.textAlign = 'center';
-		ctx.fillText(`Rapid Fire: ${powerupBulletsLeft}`, canvas.width / 2, 25);
+		ctx.fillText(`Rapid Fire: ${powerupBulletsLeft}`, canvas.width / 2, statusBarHeight * 0.65);
 	}
 
 	// Display HP as a bar - Scale to screen width for responsive design
-	const hpBarWidth = Math.min(120, canvas.width * 0.3); // Responsive width, max 120px
-	const hpBarHeight = 15;
+	const hpBarWidth = Math.min(canvas.width * 0.3, 120); // Responsive width, max 120px
+	const hpBarHeight = statusBarHeight * 0.4;
 	const hpPercent = player.hp / player.maxHp;
 
 	// HP Bar background
 	ctx.fillStyle = '#333';
-	ctx.fillRect(canvas.width - hpBarWidth - 10, 15, hpBarWidth, hpBarHeight);
+	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth, hpBarHeight);
 
 	// HP Bar fill with color based on percentage
 	ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
-	ctx.fillRect(canvas.width - hpBarWidth - 10, 15, hpBarWidth * hpPercent, hpBarHeight);
+	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth * hpPercent, hpBarHeight);
 
 	// Add separators for UI sections
 	ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
@@ -1890,29 +2026,40 @@ function update() {
     gameLoop = requestAnimationFrame(update);
 }
 // Add this function outside of any other function
+// Modify the drawMobileControls function
 function drawMobileControls() {
     if (!isMobile || !playerReady) return;
     
-    // Draw joystick base
-    ctx.globalAlpha = 0.3;
+    // Draw joystick base with improved visibility
+    ctx.globalAlpha = 0.5; // Increased from 0.3 for better visibility
     ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
     ctx.arc(joystick.baseX, joystick.baseY, joystick.radius, 0, Math.PI * 2);
     ctx.fill();
     
+    // Add a visible border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
     // Draw joystick knob
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = 0.7; // Increased from 0.5
     ctx.fillStyle = '#4CAF50';
     ctx.beginPath();
     ctx.arc(joystick.knobX, joystick.knobY, joystick.knobRadius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Draw fire button
-    ctx.globalAlpha = fireButton.pressed ? 0.7 : 0.3;
+    // Draw fire button with improved visibility
+    ctx.globalAlpha = fireButton.pressed ? 0.8 : 0.6; // Increased for better visibility
     ctx.fillStyle = '#FF4444';
     ctx.beginPath();
     ctx.arc(fireButton.x, fireButton.y, fireButton.radius, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Add a visible border for fire button
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     
     // Draw fire icon in button
     ctx.globalAlpha = 0.9;
