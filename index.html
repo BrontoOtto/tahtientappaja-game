@@ -68,6 +68,17 @@
             display: none;
             z-index: 200;
         }
+		.socialLink {
+			transition: transform 0.2s;
+			display: block;
+		}
+		.socialLink:hover {
+			transform: scale(1.1);
+		}
+		.socialLink img {
+			border-radius: 8px;
+			border: 2px solid rgba(255,255,255,0.3);
+		}
     </style>
 </head>
 <body>
@@ -84,12 +95,28 @@
 			<canvas id="characterAnimCanvas" width="250" height="250" style="margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;"></canvas>
 		</div>
 		<button id="startButton" class="button">TESTI7</button>
+		<div id="socialLinks" style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
+			<a href="https://open.spotify.com/artist/430IoNZCOIiPbftprTO9zN?si=Q3bUWCGsTN-MZwyI6NnLhw" target="_blank" class="socialLink">
+				<img src="spoti.png" alt="Spotify" width="50" height="50">
+			</a>
+			<a href="https://www.instagram.com/jakkepoikanen?igsh=Y2d2YzBvemJqam52" target="_blank" class="socialLink">
+				<img src="ig.png" alt="Instagram" width="50" height="50">
+			</a>
+		</div>
 	</div>
 
 	<div id="gameOverScreen" class="screen" style="display:none;">
 		<h2>Game Over</h2>
 		<p>Final Score: <span id="finalScore">0</span></p>
 		<button id="restartButton" class="button">Restart Game</button>
+		<div id="socialLinks2" style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
+			<a href="https://open.spotify.com/artist/430IoNZCOIiPbftprTO9zN?si=Q3bUWCGsTN-MZwyI6NnLhw" target="_blank" class="socialLink">
+				<img src="spoti.png" alt="Spotify" width="50" height="50">
+			</a>
+			<a href="https://www.instagram.com/jakkepoikanen?igsh=Y2d2YzBvemJqam52" target="_blank" class="socialLink">
+				<img src="ig.png" alt="Instagram" width="50" height="50">
+			</a>
+		</div>
 	</div>
     <script>
 // Asset loading handler
@@ -201,6 +228,13 @@ function assetLoaded() {
 		const mainCharacterFrameWidth = 250; // Width of each frame in pixels
 		const mainCharacterFrameHeight = 1000; // Height of each frame in pixels
 		const mainCharacterFrameDuration = 150; // Milliseconds per frame (adjust for speed)
+		// Player animation variables
+		let playerAnimFrame = 0;
+		let playerAnimTimer = 0;
+		const playerFrameCount = 2; // Your animation has 2 frames
+		const playerFrameWidth = 500; // Width of each frame in your vertical sprite sheet
+		const playerFrameHeight = 500; // Height of each frame (1000px ÷ 2 frames = 500px per frame)
+		const playerFrameDuration = 200; // Milliseconds per frame (adjust for speed)
 		let powerupActive = false;
 		let powerupBulletsLeft = 0;
 		let powerup = null;
@@ -402,7 +436,7 @@ function loadAllAssets() {
     loadImage(window.spinnerEnemyImage, 'keltatahti.png');
     loadImage(window.powerupImage, 'powerup1.png');
     loadImage(window.bossImage, 'boss.png');
-    loadImage(window.playerImage, 'luke.png');
+    loadImage(window.playerImage, 'alus1.png');
     loadImage(window.logoImage, 'LOGO.png');
 	loadImage(window.mainCharacterAnimImage, 'alkuanim.png');
     
@@ -511,7 +545,7 @@ document.addEventListener('keyup', (e) => {
         const player = {
             x: canvas.width / 2,
             y: canvas.height - 80,
-            size: 50,
+            size: 75,
             hp: 100,
             maxHp: 100,
             bullets: []
@@ -1227,8 +1261,11 @@ function animateMainCharacter() {
 			// Regular enemy spawn logic - only allow shooting enemies after 10 seconds
 			const isShootingEnemy = canSpawnShootingEnemy && Math.random() < 0.3;
 			
+			// Add margin to prevent enemies from spawning too close to the edges
+			const edgeMargin = 40;
+			
 			const enemy = {
-				x: Math.random() * (canvas.width - 20),
+				x: edgeMargin + Math.random() * (canvas.width - (edgeMargin * 2)),
 				y: -20,
 				width: 22,
 				height: 22,
@@ -1963,22 +2000,25 @@ function update() {
     drawPowerup(); // Draw powerup if it exists
     drawEnemies();
     
-    // Draw player
-    ctx.drawImage(window.playerImage, 
-        player.x - player.size/2, 
-        player.y - player.size/2,
-        player.size,
-        player.size
-    );
-    
-    // Draw invulnerability effect
-    if (playerInvulnerable) {
-        ctx.strokeStyle = 'rgba(0, 255, 255, ' + (0.7 + Math.sin(Date.now() / 100) * 0.3) + ')';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.size/2 + 5, 0, Math.PI * 2);
-        ctx.stroke();
-    }
+    // Draw player with animation
+	updatePlayerAnimation();
+	if (window.playerImage.complete) {
+		// Calculate source Y position based on current frame (vertical sprite sheet)
+		const sourceX = 0; // X position is always 0 in a vertical sprite sheet
+		const sourceY = playerAnimFrame * playerFrameHeight; // Y changes based on frame
+		
+		// Draw the current frame
+		ctx.drawImage(
+			window.playerImage,
+			sourceX, sourceY, playerFrameWidth, playerFrameHeight, // Source rectangle
+			player.x - player.size/2, player.y - player.size/2,    // Destination position
+			player.size, player.size                              // Destination size
+		);
+	} else {
+		// Fallback if image isn't loaded
+		ctx.fillStyle = '#4CAF50';
+		ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+	}
     
 
     
@@ -2024,6 +2064,15 @@ function update() {
     }
     
     gameLoop = requestAnimationFrame(update);
+}
+
+function updatePlayerAnimation() {
+    // Update animation frame based on timer
+    const now = Date.now();
+    if (now - playerAnimTimer > playerFrameDuration) {
+        playerAnimFrame = (playerAnimFrame + 1) % playerFrameCount;
+        playerAnimTimer = now;
+    }
 }
 // Add this function outside of any other function
 // Modify the drawMobileControls function
@@ -2343,6 +2392,18 @@ if (document.readyState === "complete" || document.readyState === "interactive")
                 }
             }, 5000);
 			*/
+			const socialLinks = document.querySelectorAll('.socialLink');
+    
+			socialLinks.forEach(link => {
+				link.addEventListener('touchstart', function() {
+					this.style.transform = 'scale(1.1)';
+				});
+				
+				link.addEventListener('touchend', function() {
+					this.style.transform = 'scale(1)';
+				});
+			});
+
         });
     </script>
 </body>
