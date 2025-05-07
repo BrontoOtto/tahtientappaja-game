@@ -406,7 +406,7 @@ function createMobileControls() {
     
     // Scale joystick size based on canvas dimensions but make it bigger
     const minDimension = Math.min(canvas.width, canvas.height * 0.3);
-    joystick.radius = minDimension * 0.22; // Increased from 0.15 to 0.22 (about 50% larger)
+    joystick.radius = minDimension * 0.15; // Increased from 0.15 to 0.22 (about 50% larger)
     joystick.knobRadius = joystick.radius * 0.5; // Proportional to base
     joystick.maxDistance = joystick.radius * 1.2; // Slightly larger than radius
     
@@ -737,7 +737,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
