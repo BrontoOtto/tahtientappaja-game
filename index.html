@@ -737,7 +737,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('JAKKEONGEI', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -811,14 +811,9 @@ function initializeMusic() {
 
 // Additionally, ensure music is stopped when switching away from game
 function stopMusic() {
-    if (backgroundMusic) {
-        try {
-            backgroundMusic.pause();
-            isBackgroundMusicPlaying = false;
-        } catch (e) {
-            console.error("Error stopping music:", e);
-        }
-    }
+    // Function intentionally left empty to keep music playing
+    console.log("stopMusic called but ignored to keep music playing");
+    return;
 }
 
 // Add this to handle game state transitions
@@ -1501,8 +1496,6 @@ function endGame() {
     gameStats.style.display = 'none';
     gameOverScreen.style.display = 'block';
     
-    // Stop the music when game ends
-    stopMusic();
     
     // Make sure the restart button is properly initialized
     restartButtonFrame = 0;
