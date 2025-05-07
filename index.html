@@ -517,7 +517,7 @@ function loadAllAssets() {
             }
         }, 2000);
         
-        tempAudio.src = 'tappaja.mp3';
+        tempAudio.src = 'tappaja1.mp3';
     } catch (e) {
         console.error("Audio preload error:", e);
         assetLoaded(); // Count as loaded even if it fails
@@ -782,7 +782,7 @@ function initializeMusic() {
         
         // Create new audio element
         backgroundMusic = new Audio();
-        backgroundMusic.src = 'tappaja.mp3';
+        backgroundMusic.src = 'tappaja1.mp3';
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
         
@@ -823,7 +823,7 @@ function initializeMusic() {
     // For all other devices
     else {
         if (!backgroundMusic) {
-            backgroundMusic = new Audio('tappaja.mp3');
+            backgroundMusic = new Audio('tappaja1.mp3');
             backgroundMusic.loop = true;
             backgroundMusic.volume = 0.5;
             
