@@ -737,7 +737,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -2530,31 +2530,16 @@ function updatePlayerMovement() {
 				const normalizedX = touchX * (canvas.width / rect.width);
 				const normalizedY = touchY * (canvas.height / rect.height);
 				
-				// Only process joystick touches on the LEFT HALF of the screen
-				if (normalizedX < canvas.width / 2) {
-					// Check if the touch is on the joystick
-					const joystickDistance = Math.sqrt(
-						Math.pow(normalizedX - joystick.baseX, 2) + 
-						Math.pow(normalizedY - joystick.baseY, 2)
-					);
-					
-					if (joystickDistance <= joystick.radius) {
-						joystick.active = true;
-						joystick.knobX = normalizedX;
-						joystick.knobY = normalizedY;
-					}
-				}
-				// Only process fire button touches on the RIGHT HALF of the screen
-				else {
-					// Check if the touch is on the fire button
-					const fireButtonDistance = Math.sqrt(
-						Math.pow(normalizedX - fireButton.x, 2) + 
-						Math.pow(normalizedY - fireButton.y, 2)
-					);
-					
-					if (fireButtonDistance <= fireButton.radius) {
-						fireButton.pressed = true;
-					}
+				// Check if the touch is on the joystick (now in the middle/right area)
+				const joystickDistance = Math.sqrt(
+					Math.pow(normalizedX - joystick.baseX, 2) + 
+					Math.pow(normalizedY - joystick.baseY, 2)
+				);
+				
+				if (joystickDistance <= joystick.radius) {
+					joystick.active = true;
+					joystick.knobX = normalizedX;
+					joystick.knobY = normalizedY;
 				}
 			}
 		}, { passive: false });
@@ -2576,37 +2561,21 @@ function updatePlayerMovement() {
 				const normalizedX = touchX * (canvas.width / rect.width);
 				const normalizedY = touchY * (canvas.height / rect.height);
 				
-				// Only update joystick for touches on the LEFT side
-				if (normalizedX < canvas.width / 2) {
-					// Only update if joystick is active
-					if (joystick.active) {
-						const joystickDistance = Math.sqrt(
-							Math.pow(normalizedX - joystick.baseX, 2) + 
-							Math.pow(normalizedY - joystick.baseY, 2)
-						);
-						
-						if (joystickDistance <= joystick.maxDistance) {
-							joystick.knobX = normalizedX;
-							joystick.knobY = normalizedY;
-						} else {
-							// Limit the knob to the maximum distance
-							const angle = Math.atan2(normalizedY - joystick.baseY, normalizedX - joystick.baseX);
-							joystick.knobX = joystick.baseX + Math.cos(angle) * joystick.maxDistance;
-							joystick.knobY = joystick.baseY + Math.sin(angle) * joystick.maxDistance;
-						}
-					}
-				}
-				// Only update fire button for touches on the RIGHT side
-				else {
-					// Check if the touch is on or near the fire button
-					const fireButtonDistance = Math.sqrt(
-						Math.pow(normalizedX - fireButton.x, 2) + 
-						Math.pow(normalizedY - fireButton.y, 2)
+				// Update joystick if it's active (regardless of screen position)
+				if (joystick.active) {
+					const joystickDistance = Math.sqrt(
+						Math.pow(normalizedX - joystick.baseX, 2) + 
+						Math.pow(normalizedY - joystick.baseY, 2)
 					);
 					
-					// Update fire button state based on whether the touch is on it
-					if (fireButtonDistance <= fireButton.radius) {
-						fireButton.pressed = true;
+					if (joystickDistance <= joystick.maxDistance) {
+						joystick.knobX = normalizedX;
+						joystick.knobY = normalizedY;
+					} else {
+						// Limit the knob to the maximum distance
+						const angle = Math.atan2(normalizedY - joystick.baseY, normalizedX - joystick.baseX);
+						joystick.knobX = joystick.baseX + Math.cos(angle) * joystick.maxDistance;
+						joystick.knobY = joystick.baseY + Math.sin(angle) * joystick.maxDistance;
 					}
 				}
 			}
@@ -2617,7 +2586,6 @@ function updatePlayerMovement() {
 				// Check remaining touches to see if any are still on our controls
 				const rect = canvas.getBoundingClientRect();
 				let joystickStillActive = false;
-				let fireButtonStillPressed = false;
 				
 				// Loop through all ACTIVE touches to see if any are still on our controls
 				for (let i = 0; i < e.touches.length; i++) {
@@ -2629,20 +2597,14 @@ function updatePlayerMovement() {
 					const normalizedX = touchX * (canvas.width / rect.width);
 					const normalizedY = touchY * (canvas.height / rect.height);
 					
-					// Left side - joystick
-					if (normalizedX < canvas.width / 2) {
+					// Check if any touch is near the joystick
+					const joystickDistance = Math.sqrt(
+						Math.pow(normalizedX - joystick.baseX, 2) + 
+						Math.pow(normalizedY - joystick.baseY, 2)
+					);
+					
+					if (joystickDistance <= joystick.radius * 1.5) { // Use a slightly larger area for detection
 						joystickStillActive = true;
-					}
-					// Right side - fire button
-					else {
-						const fireButtonDistance = Math.sqrt(
-							Math.pow(normalizedX - fireButton.x, 2) + 
-							Math.pow(normalizedY - fireButton.y, 2)
-						);
-						
-						if (fireButtonDistance <= fireButton.radius) {
-							fireButtonStillPressed = true;
-						}
 					}
 				}
 				
@@ -2651,10 +2613,6 @@ function updatePlayerMovement() {
 					joystick.active = false;
 					joystick.knobX = joystick.baseX;
 					joystick.knobY = joystick.baseY;
-				}
-				
-				if (!fireButtonStillPressed) {
-					fireButton.pressed = false;
 				}
 			});
         // Initial render
