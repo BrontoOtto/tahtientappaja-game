@@ -94,7 +94,7 @@
 			<img src="LOGO.png" alt="Logo" style="max-width: 300px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
 			<canvas id="characterAnimCanvas" width="250" height="250" style="margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;"></canvas>
 		</div>
-		<button id="startButton" class="button">TESTI7</button>
+		<canvas id="startButtonCanvas" width="335" height="125" style="cursor: pointer; max-width: 100%;"></canvas>
 		<div id="socialLinks" style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
 			<a href="https://open.spotify.com/artist/430IoNZCOIiPbftprTO9zN?si=Q3bUWCGsTN-MZwyI6NnLhw" target="_blank" class="socialLink">
 				<img src="Spoti.png" alt="Spotify" width="50" height="50">
@@ -108,7 +108,7 @@
 	<div id="gameOverScreen" class="screen" style="display:none;">
 		<h2>Game Over</h2>
 		<p>Final Score: <span id="finalScore">0</span></p>
-		<button id="restartButton" class="button">Restart Game</button>
+		<canvas id="restartButtonCanvas" width="335" height="125" style="cursor: pointer; max-width: 100%;"></canvas>
 		<div id="socialLinks2" style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
 			<a href="https://open.spotify.com/artist/430IoNZCOIiPbftprTO9zN?si=Q3bUWCGsTN-MZwyI6NnLhw" target="_blank" class="socialLink">
 				<img src="Spoti.png" alt="Spotify" width="50" height="50">
@@ -189,7 +189,7 @@ function assetLoaded() {
         // Game state global variables
 		let currentScreen = "loading";
 		let loadingLoop;
-		let totalAssets = 10; // Increased by 1 to include the logo
+		let totalAssets = 12; // Increased by 1 to include the explosion 
 		let keys = {}; // Track pressed keys
 		let isMobile = false; // Will be set based on device detection
 		let joystick = {
@@ -231,10 +231,30 @@ function assetLoaded() {
 		// Player animation variables
 		let playerAnimFrame = 0;
 		let playerAnimTimer = 0;
+		// Start button animation variables
+		let startButtonImage = new Image();
+		let startButtonAnimating = false;
+		let startButtonFrame = 0;
+		let startButtonFrameCount = 17; // Your animation has 17 frames
+		let startButtonFrameWidth = 670; // Width of each frame
+		let startButtonFrameHeight = 250; // Height of each frame
+		let startButtonTimer = 0;
+		let startButtonAnimationDuration = 1000; // 1 seconds for the whole animation
+		// Restart button animation variables (uses same image as start button)
+		let restartButtonAnimating = false;
+		let restartButtonFrame = 0;
+		let restartButtonTimer = 0;
 		const playerFrameCount = 2; // Your animation has 2 frames
 		const playerFrameWidth = 500; // Width of each frame in your vertical sprite sheet
 		const playerFrameHeight = 500; // Height of each frame (1000px ÷ 2 frames = 500px per frame)
 		const playerFrameDuration = 200; // Milliseconds per frame (adjust for speed)
+		// Explosion animation variables
+		let explosionImage = new Image();
+		let explosions = []; // Array to track multiple explosions
+		const explosionFrameCount = 7; // Your animation has 7 frames
+		const explosionFrameWidth = 250; // Width of each frame
+		const explosionFrameHeight = 172; // Height of each frame
+		const explosionDuration = 500; // 0.5 seconds for the whole animation
 		let powerupActive = false;
 		let powerupBulletsLeft = 0;
 		let powerup = null;
@@ -347,6 +367,9 @@ function switchScreen(newScreen) {
 		mainCharacterAnimFrame = 0;
 		mainCharacterAnimTimer = Date.now();
 		requestAnimationFrame(animateMainCharacter);
+		// Initialize start button
+		startButtonFrame = 0;
+		updateStartButton();
 	} 
     else if (newScreen === "game") {
         isLoading = false;
@@ -357,13 +380,16 @@ function switchScreen(newScreen) {
         }
     } 
     else if (newScreen === "gameOver") {
-        isLoading = false;
-        isGameRunning = false;
-        
-        if (gameOverScreen) {
-            gameOverScreen.style.display = 'block';
-        }
-    }
+		isLoading = false;
+		isGameRunning = false;
+		
+		if (gameOverScreen) {
+			gameOverScreen.style.display = 'block';
+			// Initialize restart button
+			restartButtonFrame = 0;
+			updateRestartButton();
+		}
+	}
     
     currentScreen = newScreen;
 }
@@ -430,6 +456,37 @@ function loadAllAssets() {
     }
     
     // Load all images
+	loadImage(window.startButtonImage, 'start.png');
+	loadImage(window.explosionImage, 'explo.png');
+	// Add a special error handling for the start button
+	// After loadImage(window.startButtonImage, 'start.png');
+	window.startButtonImage.addEventListener('load', function() {
+		console.log("Start button image loaded successfully:", this.width, "x", this.height);
+		// Force start button update once loaded
+		setTimeout(updateStartButton, 100);
+	});
+
+	window.startButtonImage.addEventListener('error', function() {
+		console.error("Failed to load start button image - check path and file existence");
+		// Create a fallback button
+		const tempCanvas = document.createElement('canvas');
+		tempCanvas.width = 670;
+		tempCanvas.height = 4250;
+		const tempCtx = tempCanvas.getContext('2d');
+		
+		// Create a simple green button as fallback
+		for (let i = 0; i < 17; i++) {
+			tempCtx.fillStyle = i === 0 ? '#4CAF50' : '#2E7D32';
+			tempCtx.fillRect(0, i * 250, 670, 250);
+			tempCtx.fillStyle = 'white';
+			tempCtx.font = '40px Arial';
+			tempCtx.textAlign = 'center';
+			tempCtx.fillText('START GAME', 335, i * 250 + 125);
+		}
+		
+		// Set the canvas as the source for the image
+		this.src = tempCanvas.toDataURL();
+	});
     loadImage(window.enemyImage, 'punatahti.png');
     loadImage(window.shootingEnemyImage, 'sinitahti.png');
     loadImage(window.circularEnemyImage, 'vihertahti.png');
@@ -495,6 +552,10 @@ document.addEventListener('DOMContentLoaded', function() {
     window.playerImage = new Image();
     window.logoImage = new Image();
 	window.mainCharacterAnimImage = new Image();
+	window.explosionImage = new Image();
+	
+	// Ensure the start button image is initialized
+	window.startButtonImage = window.startButtonImage || new Image();
     
     // Resize canvas to fit the device screen
     resizeCanvas();
@@ -504,18 +565,117 @@ document.addEventListener('DOMContentLoaded', function() {
     const restartButton = document.getElementById('restartButton');
     
     // Fix start button event listener
-    if (startButton) {
-        startButton.removeEventListener('click', startGame);
-        startButton.addEventListener('click', startGame);
-        console.log("Start button listener added");
-    } else {
-        console.error("Start button not found!");
-    }
+    // Set up start button canvas interaction
+	const startButtonCanvas = document.getElementById('startButtonCanvas');
+	if (startButtonCanvas) {
+		// Mouse events for desktop
+		startButtonCanvas.addEventListener('mousedown', function() {
+			startButtonAnimating = true;
+			startButtonTimer = Date.now();
+			requestAnimationFrame(updateStartButton);
+		});
+		
+		startButtonCanvas.addEventListener('mouseup', function() {
+			if (startButtonAnimating) {
+				startButtonAnimating = false;
+				startButtonFrame = 0; // Reset to frame 0 when released early
+				updateStartButton(); // Update to show the reset frame
+			}
+		});
+		
+		startButtonCanvas.addEventListener('mouseleave', function() {
+			if (startButtonAnimating) {
+				startButtonAnimating = false;
+				startButtonFrame = 0; // Reset frame when mouse leaves
+				updateStartButton();
+			}
+		});
+		
+		// Touch events for mobile
+		startButtonCanvas.addEventListener('touchstart', function(e) {
+			e.preventDefault();
+			startButtonAnimating = true;
+			startButtonTimer = Date.now();
+			requestAnimationFrame(updateStartButton);
+		});
+		
+		startButtonCanvas.addEventListener('touchend', function(e) {
+			e.preventDefault();
+			if (startButtonAnimating) {
+				startButtonAnimating = false;
+				startButtonFrame = 0; // Reset to frame 0 
+				updateStartButton();
+			}
+		});
+		
+		startButtonCanvas.addEventListener('touchcancel', function(e) {
+			e.preventDefault();
+			if (startButtonAnimating) {
+				startButtonAnimating = false;
+				startButtonFrame = 0;
+				updateStartButton();
+			}
+		});
+		
+		console.log("Start button canvas listeners added");
+	} else {
+		console.error("Start button canvas not found!");
+	}
     
-    // Restart button
-    if (restartButton) {
-        restartButton.addEventListener('click', restartGame);
-    }
+    // Set up restart button with the same hold-to-activate behavior
+	const restartButtonCanvas = document.getElementById('restartButtonCanvas');
+	if (restartButtonCanvas) {
+		// Mouse events for desktop
+		restartButtonCanvas.addEventListener('mousedown', function() {
+			restartButtonAnimating = true;
+			restartButtonTimer = Date.now();
+			requestAnimationFrame(updateRestartButton);
+		});
+		
+		restartButtonCanvas.addEventListener('mouseup', function() {
+			if (restartButtonAnimating) {
+				restartButtonAnimating = false;
+				restartButtonFrame = 0; // Reset to frame 0 when released early
+				updateRestartButton(); // Update to show the reset frame
+			}
+		});
+		
+		restartButtonCanvas.addEventListener('mouseleave', function() {
+			if (restartButtonAnimating) {
+				restartButtonAnimating = false;
+				restartButtonFrame = 0; // Reset frame when mouse leaves
+				updateRestartButton();
+			}
+		});
+		
+		// Touch events for mobile
+		restartButtonCanvas.addEventListener('touchstart', function(e) {
+			e.preventDefault();
+			restartButtonAnimating = true;
+			restartButtonTimer = Date.now();
+			requestAnimationFrame(updateRestartButton);
+		});
+		
+		restartButtonCanvas.addEventListener('touchend', function(e) {
+			e.preventDefault();
+			if (restartButtonAnimating) {
+				restartButtonAnimating = false;
+				restartButtonFrame = 0; // Reset to frame 0 
+				updateRestartButton();
+			}
+		});
+		
+		restartButtonCanvas.addEventListener('touchcancel', function(e) {
+			e.preventDefault();
+			if (restartButtonAnimating) {
+				restartButtonAnimating = false;
+				restartButtonFrame = 0;
+				updateRestartButton();
+			}
+		});
+		
+		console.log("Restart button canvas listeners added");
+	}
     
     // Add window resize listener
     window.addEventListener('resize', function() {
@@ -719,7 +879,17 @@ function endGame() {
     
     // Stop the music when game ends
     stopMusic();
+    
+    // Make sure the restart button is properly initialized
+    restartButtonFrame = 0;
+    
+    // Use a longer delay to ensure DOM is fully updated before drawing
+    setTimeout(function() {
+        console.log("Initializing restart button after game over");
+        updateRestartButton();
+    }, 200); // Increased from 50ms to 200ms
 }
+
 
 
 
@@ -1181,14 +1351,221 @@ function animateMainCharacter() {
     
     // Continue animation
     requestAnimationFrame(animateMainCharacter);
+	// Initialize the start button too
+    updateStartButton();
 }
-        function endGame() {
-            isGameRunning = false;
-            cancelAnimationFrame(gameLoop);
-            finalScoreElement.textContent = score;
-            gameStats.style.display = 'none';
-            gameOverScreen.style.display = 'block';
+function updateStartButton() {
+    if (!window.startButtonImage || !window.startButtonImage.complete) {
+        console.log("Start button image not ready yet");
+        // Try again in a moment
+        setTimeout(updateStartButton, 100);
+        return;
+    }
+    
+    const buttonCanvas = document.getElementById('startButtonCanvas');
+    if (!buttonCanvas) {
+        console.error("Start button canvas not found");
+        return;
+    }
+    
+    // Get the canvas context and clear it
+    const buttonCtx = buttonCanvas.getContext('2d');
+    buttonCtx.clearRect(0, 0, buttonCanvas.width, buttonCanvas.height);
+    
+    // Calculate frame position in the sprite sheet
+    const frameWidth = 670;
+    const frameHeight = 250;
+    
+    try {
+        // Draw the current frame
+        buttonCtx.drawImage(
+            window.startButtonImage,
+            0, startButtonFrame * frameHeight, 
+            frameWidth, frameHeight,        
+            0, 0,                          
+            buttonCanvas.width, buttonCanvas.height
+        );
+        
+        // If we're animating, update the frame
+        if (startButtonAnimating) {
+            const elapsed = Date.now() - startButtonTimer;
+            const progress = Math.min(elapsed / startButtonAnimationDuration, 1);
+            
+            // Map progress (0-1) to frames (1-16)
+            // Calculate which frame to show (frames 1-16 represent progress)
+            const targetFrame = Math.min(Math.floor(progress * 15) + 1, 16);
+            
+            // Update frame if it changed
+            if (targetFrame !== startButtonFrame) {
+                startButtonFrame = targetFrame;
+                console.log("Button animation frame:", startButtonFrame);
+            }
+            
+            // If animation completed, start the game
+            if (progress >= 1) {
+                console.log("Button animation complete, starting game");
+                startButtonAnimating = false;
+                startGame();
+                return;
+            }
+            
+            // Continue the animation
+            requestAnimationFrame(updateStartButton);
         }
+    } catch (e) {
+        console.error("Error drawing start button:", e);
+        // Fallback drawing code
+        buttonCtx.fillStyle = '#4CAF50';
+        buttonCtx.fillRect(0, 0, buttonCanvas.width, buttonCanvas.height);
+        buttonCtx.fillStyle = 'white';
+        buttonCtx.font = '20px Arial';
+        buttonCtx.textAlign = 'center';
+        buttonCtx.fillText('HOLD TO START', buttonCanvas.width/2, buttonCanvas.height/2 + 7);
+    }
+}
+function updateRestartButton() {
+    console.log("updateRestartButton called, canvas exists:", !!document.getElementById('restartButtonCanvas'));
+    
+    if (!window.startButtonImage || !window.startButtonImage.complete) {
+        console.log("Button image not ready yet for restart button");
+        // Try again in a moment
+        setTimeout(updateRestartButton, 100);
+        return;
+    }
+    
+    const buttonCanvas = document.getElementById('restartButtonCanvas');
+    if (!buttonCanvas) {
+        console.error("Restart button canvas not found");
+        return;
+    }
+    
+    // Get the canvas context and clear it
+    const buttonCtx = buttonCanvas.getContext('2d');
+    buttonCtx.clearRect(0, 0, buttonCanvas.width, buttonCanvas.height);
+    
+    // Calculate frame position in the sprite sheet
+    const frameWidth = 670;
+    const frameHeight = 250;
+    
+    try {
+        // Always draw frame 0 when not animating
+        if (!restartButtonAnimating) {
+            restartButtonFrame = 0;
+        }
+        
+        // Draw the current frame
+        buttonCtx.drawImage(
+            window.startButtonImage,
+            0, restartButtonFrame * frameHeight, 
+            frameWidth, frameHeight,
+            0, 0,
+            buttonCanvas.width, buttonCanvas.height
+        );
+        
+        // If we're animating, update the frame
+        if (restartButtonAnimating) {
+            const elapsed = Date.now() - restartButtonTimer;
+            const progress = Math.min(elapsed / startButtonAnimationDuration, 1);
+            
+            // Map progress (0-1) to frames (1-16)
+            const targetFrame = Math.min(Math.floor(progress * 15) + 1, 16);
+            
+            // Update frame if it changed
+            if (targetFrame !== restartButtonFrame) {
+                restartButtonFrame = targetFrame;
+                console.log("Restart button frame:", restartButtonFrame);
+            }
+            
+            // If animation completed, restart the game
+            if (progress >= 1) {
+                console.log("Restart button animation complete, restarting game");
+                restartButtonAnimating = false;
+                restartGame();
+                return;
+            }
+            
+            // Continue the animation
+            requestAnimationFrame(updateRestartButton);
+        }
+    } catch (e) {
+        console.error("Error drawing restart button:", e);
+        // Fallback if drawing fails
+        buttonCtx.fillStyle = '#4CAF50';
+        buttonCtx.fillRect(0, 0, buttonCanvas.width, buttonCanvas.height);
+        buttonCtx.fillStyle = 'white';
+        buttonCtx.font = '20px Arial';
+        buttonCtx.textAlign = 'center';
+        buttonCtx.fillText('HOLD TO RESTART', buttonCanvas.width/2, buttonCanvas.height/2 + 7);
+    }
+}
+function createExplosion(x, y, size = 1.0) {
+    // Create a new explosion at the given coordinates
+    // size parameter controls how big the explosion appears (1.0 = normal, 0.5 = half size)
+    explosions.push({
+        x: x,
+        y: y,
+        frame: 0,
+        startTime: Date.now(),
+        active: true,
+        size: size
+    });
+}
+function updateAndDrawExplosions() {
+    const now = Date.now();
+    
+    // Loop through all active explosions
+    for (let i = explosions.length - 1; i >= 0; i--) {
+        const explosion = explosions[i];
+        
+        // Calculate progress through animation
+        const elapsed = now - explosion.startTime;
+        const progress = Math.min(elapsed / explosionDuration, 1);
+        
+        // Calculate current frame based on progress
+        explosion.frame = Math.min(Math.floor(progress * explosionFrameCount), explosionFrameCount - 1);
+        
+        // Draw the current explosion frame
+        if (window.explosionImage.complete) {
+            ctx.drawImage(
+				window.explosionImage,
+				0, explosion.frame * explosionFrameHeight, 
+				explosionFrameWidth, explosionFrameHeight,
+				explosion.x - (explosionFrameWidth/4 * explosion.size), 
+				explosion.y - (explosionFrameHeight/4 * explosion.size),
+				explosionFrameWidth/2 * explosion.size, 
+				explosionFrameHeight/2 * explosion.size
+			);
+        }
+        
+        // Remove explosion if animation is complete
+        if (progress >= 1) {
+            explosions.splice(i, 1);
+        }
+    }
+}
+function endGame() {
+    isGameRunning = false;
+    cancelAnimationFrame(gameLoop);
+    finalScoreElement.textContent = score;
+    gameStats.style.display = 'none';
+    gameOverScreen.style.display = 'block';
+    
+    // Stop the music when game ends
+    stopMusic();
+    
+    // Make sure the restart button is properly initialized
+    restartButtonFrame = 0;
+    restartButtonAnimating = false;
+    
+    // Use a longer delay to ensure DOM is fully updated before drawing
+    setTimeout(function() {
+        console.log("Initializing restart button after game over");
+        updateRestartButton();
+        
+        // Call it again after a short delay to ensure it's visible
+        setTimeout(updateRestartButton, 100);
+    }, 300);
+}
         function spawnCircularGroup() {
             const groupCenterX = canvas.width / 2;
             const groupCenterY = -140;
@@ -1397,6 +1774,8 @@ function updateBullets() {
             height: boss.height
         })) {
             boss.hp--;
+			// Create a small explosion where the bullet hit
+			createExplosion(bullet.x, bullet.y, 0.4);
             player.bullets.splice(i, 1);
             
             // Boss death
@@ -1440,6 +1819,8 @@ function updateBullets() {
 				height: hitboxHeight
 			})) {
 				enemy.hp--;
+				// Create a small explosion where the bullet hit
+				createExplosion(bullet.x, bullet.y, 0.4);
 				player.bullets.splice(i, 1);
 				
 				if (enemy.hp <= 0) {
@@ -1473,6 +1854,8 @@ function updateEnemyBullets() {
 			height: player.size
 		})) {
             player.hp -= 5; // Bullet damage
+			// Create a small explosion where the bullet hit
+			createExplosion(bullet.x, bullet.y, 0.5);
             hpElement.textContent = player.hp;
             enemyBullets.splice(i, 1);
             
@@ -1669,6 +2052,9 @@ function updateEnemyBullets() {
 					} else {
 						player.hp -= 10; // Regular enemies deal 10 damage
 					}
+					
+					// Add explosion at the collision point
+					createExplosion(enemy.x, enemy.y);
 					
 					enemies.splice(i, 1);
 					if (circularGroup) {
@@ -2019,6 +2405,8 @@ function update() {
 		ctx.fillStyle = '#4CAF50';
 		ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
 	}
+	// Draw explosions
+	updateAndDrawExplosions();
     
 
     
@@ -2374,6 +2762,7 @@ if (document.readyState === "complete" || document.readyState === "interactive")
             console.log("- Start Button:", document.getElementById('startButton'));
             console.log("- Game Stats:", document.getElementById('gameStats'));
             console.log("- Game Over Screen:", document.getElementById('gameOverScreen'));
+			console.log("Restart button canvas found:", !!document.getElementById('restartButtonCanvas'));
             
             // Add visible debug info
 			/*
