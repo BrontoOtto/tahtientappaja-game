@@ -398,20 +398,20 @@ function detectMobile() {
            (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
 }
 function createMobileControls() {
-    // Position the joystick in the bottom-middle-right using relative positioning
-    joystick.baseX = canvas.width * 0.5; // 50% from left edge (moved to the right)
-    joystick.baseY = canvas.height * 0.85; // 85% from top (15% from bottom)
+    // Position the joystick in a more comfortable position
+    joystick.baseX = canvas.width * 0.75; // 75% from left (bottom-right corner)
+    joystick.baseY = canvas.height * 0.80; // 80% from top
     joystick.knobX = joystick.baseX;
     joystick.knobY = joystick.baseY;
     
-    // Scale joystick size based on canvas dimensions but make it bigger
+    // Scale joystick size to be comfortable
     const minDimension = Math.min(canvas.width, canvas.height * 0.3);
-    joystick.radius = minDimension * 0.15; // Increased from 0.15 to 0.22 (about 50% larger)
-    joystick.knobRadius = joystick.radius * 0.5; // Proportional to base
-    joystick.maxDistance = joystick.radius * 1.2; // Slightly larger than radius
+    joystick.radius = minDimension * 0.18; // Slightly larger than original
+    joystick.knobRadius = joystick.radius * 0.6; // Bigger knob for easier control
+    joystick.maxDistance = joystick.radius * 0.9; // Shorter travel distance
+    joystick.deadZone = joystick.radius * 0.15; // 15% dead zone for precision
     
-    // The fire button is no longer needed, but we keep the variable initialized
-    // to prevent errors in any code that might still reference it
+    // Fire button variables kept for compatibility
     fireButton.x = 0;
     fireButton.y = 0;
     fireButton.radius = 0;
@@ -737,7 +737,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -980,6 +980,7 @@ function startGame() {
         
         // Reset player
         player.y = canvas.height + 100;
+		player.x = canvas.width / 2;
         player.hp = player.maxHp;
         player.bullets = [];
         
@@ -2255,39 +2256,39 @@ function update() {
             // Leave gameStartSequence true until timer completes
         }
     } else if (playerReady) {
-        if (isMobile) {
-            // Mobile joystick controls
-            if (joystick.active) {
-                // Calculate direction vector
-                const dx = joystick.knobX - joystick.baseX;
-                const dy = joystick.knobY - joystick.baseY;
+        // Inside your update function where mobile controls are handled
+		if (isMobile) {
+			// Mobile joystick controls
+			if (joystick.active) {
+				// Calculate direction vector
+				const dx = joystick.knobX - joystick.baseX;
+				const dy = joystick.knobY - joystick.baseY;
 				
 				// Calculate length of movement from center
 				const length = Math.sqrt(dx * dx + dy * dy);
 				
-				// Add a dead zone in the center (no movement if joystick is barely moved)
-				const deadZone = joystick.maxDistance * 0.15; // 15% of max distance is dead zone
-				
-				if (length > deadZone) { // Only move if outside dead zone
-					// Calculate how far the joystick is moved as a percentage of max distance
-					// Subtract the deadZone and normalize to the remaining distance
-					const normalizedLength = (length - deadZone) / (joystick.maxDistance - deadZone);
+				// Use the dead zone
+				if (length > joystick.deadZone) {
+					// Calculate normalized movement (considering the dead zone)
+					const normalizedLength = Math.min(
+						(length - joystick.deadZone) / (joystick.maxDistance - joystick.deadZone),
+						1.0
+					);
 					
-					// Calculate the movement speed based on how far joystick is moved
-					// This creates a curve where slight movements cause slow speed,
-					// and full movements cause full speed
-					const maxSpeed = 3;
-					const moveSpeed = maxSpeed * normalizedLength; // Define moveSpeed based on normalization
+					// Apply a non-linear response curve for better control
+					// This makes small movements more precise while still allowing full speed
+					const responseValue = normalizedLength * normalizedLength;
+					
+					// Calculate speed based on how far the stick is moved
+					const maxSpeed = 5; // Increased for better responsiveness
+					const moveSpeed = maxSpeed * responseValue;
+					
 					// Apply movement in the joystick direction
 					player.x += (dx / length) * moveSpeed;
 					player.y += (dy / length) * moveSpeed;
 				}
-                
-                
-            }
-            
-
-        } else {
+			}
+		} else {
             // Desktop mouse controls
 			// Make sure we have mouseX and mouseY variables set from mousemove events
 			if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
