@@ -254,7 +254,7 @@ function assetLoaded() {
 		const explosionFrameCount = 7; // Your animation has 7 frames
 		const explosionFrameWidth = 250; // Width of each frame
 		const explosionFrameHeight = 172; // Height of each frame
-		const explosionDuration = 500; // 0.5 seconds for the whole animation
+		const explosionDuration = 250; // 0.25 seconds for the whole animation
 		let powerupActive = false;
 		let powerupBulletsLeft = 0;
 		let powerup = null;
@@ -877,8 +877,6 @@ function endGame() {
     gameStats.style.display = 'none';
     gameOverScreen.style.display = 'block';
     
-    // Stop the music when game ends
-    stopMusic();
     
     // Make sure the restart button is properly initialized
     restartButtonFrame = 0;
@@ -2336,24 +2334,23 @@ function update() {
                 
             }
             
-            // Fire button controls
-            if (fireButton.pressed) {
-                shoot();
-            }
+
         } else {
-            // Desktop keyboard controls
-            const moveSpeed = 2.5;
-            
-            if (keys['ArrowLeft']) player.x -= moveSpeed;
-            if (keys['ArrowRight']) player.x += moveSpeed;
-            if (keys['ArrowUp']) player.y -= moveSpeed;
-            if (keys['ArrowDown']) player.y += moveSpeed;
-            
-            // Spacebar shooting
-            if (keys['Space']) {
-                shoot();
-            }
-        }
+            // Desktop mouse controls
+			// Make sure we have mouseX and mouseY variables set from mousemove events
+			if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
+				// Smooth movement toward mouse position
+				const targetX = mouseX;
+				const targetY = mouseY;
+				
+				// Interpolate position for smooth movement
+				player.x = player.x + (targetX - player.x) * 0.2; // Adjust factor for faster/slower movement
+				player.y = player.y + (targetY - player.y) * 0.2;
+			}
+		}
+		
+		// Automatic shooting for all control types
+		shoot();
         
         
         // Keep player within bounds
@@ -2410,41 +2407,24 @@ function update() {
     
 
     
-    // Draw mobile controls if on mobile
-    if (isMobile) {
-        // Draw joystick base
-        ctx.globalAlpha = 0.3;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(joystick.baseX, joystick.baseY, joystick.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw joystick knob
-        ctx.globalAlpha = 0.5;
-        ctx.fillStyle = '#4CAF50';
-        ctx.beginPath();
-        ctx.arc(joystick.knobX, joystick.knobY, joystick.knobRadius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw fire button
-        ctx.globalAlpha = fireButton.pressed ? 0.7 : 0.3;
-        ctx.fillStyle = '#FF4444';
-        ctx.beginPath();
-        ctx.arc(fireButton.x, fireButton.y, fireButton.radius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw fire icon in button
-        ctx.globalAlpha = 0.9;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.moveTo(fireButton.x - 15, fireButton.y);
-        ctx.lineTo(fireButton.x + 15, fireButton.y);
-        ctx.lineTo(fireButton.x, fireButton.y - 20);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.globalAlpha = 1.0; // Reset alpha
-    }
+	// Draw mobile controls if on mobile
+	if (isMobile) {
+		// Draw joystick base
+		ctx.globalAlpha = 0.3;
+		ctx.fillStyle = '#FFFFFF';
+		ctx.beginPath();
+		ctx.arc(joystick.baseX, joystick.baseY, joystick.radius, 0, Math.PI * 2);
+		ctx.fill();
+		
+		// Draw joystick knob
+		ctx.globalAlpha = 0.5;
+		ctx.fillStyle = '#4CAF50';
+		ctx.beginPath();
+		ctx.arc(joystick.knobX, joystick.knobY, joystick.knobRadius, 0, Math.PI * 2);
+		ctx.fill();
+		
+		ctx.globalAlpha = 1.0; // Reset alpha
+	}
     
     // Update explosion animation
     if (explosionAnimation) {
@@ -2537,11 +2517,7 @@ function updatePlayerMovement() {
                     player.y += (dy / length) * moveSpeed;
                 }
             }
-            
-            // Fire button controls
-            if (fireButton.pressed) {
-                shoot();
-            }
+
         } else {
             // Desktop keyboard controls
             const moveSpeed = 0.4;
@@ -2551,12 +2527,13 @@ function updatePlayerMovement() {
             if (keys['ArrowUp']) player.y -= moveSpeed;
             if (keys['ArrowDown']) player.y += moveSpeed;
             
-            // Spacebar shooting
-            if (keys['Space']) {
-                shoot();
-            }
         }
         
+		// Automatic shooting when player is ready
+		if (playerReady) {
+			shoot();
+		}
+		
         // Keep player within bounds (for both control methods)
         player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
 		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
