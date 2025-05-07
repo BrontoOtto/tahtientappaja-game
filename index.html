@@ -77,7 +77,6 @@
 		}
 		.socialLink img {
 			border-radius: 8px;
-			border: 2px solid rgba(255,255,255,0.3);
 		}
     </style>
 </head>
@@ -766,95 +765,47 @@ function initializeMusic() {
         return;
     }
     
-    // For iOS devices
-    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        console.log("iOS device detected, using special audio handling");
-        
-        // Destroy any existing audio first
-        if (backgroundMusic) {
-            try {
-                backgroundMusic.pause();
-                backgroundMusic.src = "";
-                backgroundMusic = null;
-            } catch (e) {
-                console.error("Error cleaning up old audio:", e);
-            }
-        }
-        
-        // Create new audio element
-        backgroundMusic = new Audio();
-        backgroundMusic.src = 'tappaja.mp3';
+    // For all devices - unified approach
+    if (!backgroundMusic) {
+        backgroundMusic = new Audio('tappaja.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
         
-        // Set a flag to prevent multiple play attempts
-        let playAttempted = false;
+        // Use a user interaction to trigger audio
+        // This takes advantage of the start/restart button click
+        const playPromise = backgroundMusic.play();
         
-        // This function will be called only once
-        const playAudioOnce = function() {
-            if (playAttempted) return;
-            playAttempted = true;
-            
-            console.log("Attempting to play audio on iOS");
-            const playPromise = backgroundMusic.play();
-            
-            if (playPromise) {
-                playPromise.then(() => {
-                    console.log("iOS audio playing successfully");
-                    isBackgroundMusicPlaying = true;
-                }).catch(e => {
-                    console.log("iOS audio play error:", e);
-                    isBackgroundMusicPlaying = false;
-                    playAttempted = false; // Reset to allow another attempt
-                });
-            }
-        };
-        
-        // iOS requires user interaction to play audio
-        playAudioOnce();
-        
-        // Add a backup play attempt with delay (helps with some iOS versions)
-        setTimeout(() => {
-            if (!isBackgroundMusicPlaying) {
-                console.log("Trying audio play again after delay");
-                playAudioOnce();
-            }
-        }, 1000);
-    } 
-    // For all other devices
-    else {
-        if (!backgroundMusic) {
-            backgroundMusic = new Audio('tappaja.mp3');
-            backgroundMusic.loop = true;
-            backgroundMusic.volume = 0.5;
-            
-            backgroundMusic.play().then(() => {
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
                 console.log("Audio playing successfully");
                 isBackgroundMusicPlaying = true;
             }).catch(e => {
-                console.log("Audio autoplay was prevented:", e);
-                // Create a button to allow user to start audio
-                const musicButton = document.createElement('button');
-                musicButton.innerHTML = "Play Music";
-                musicButton.style.position = "absolute";
-                musicButton.style.top = "10px";
-                musicButton.style.right = "10px";
-                musicButton.style.zIndex = "1000";
-                musicButton.addEventListener('click', () => {
+                console.log("Autoplay prevented, trying again on next user interaction");
+                
+                // Instead of creating a visible button, set up a one-time event listener
+                // on the entire document to play music on the next user interaction
+                const playOnInteraction = function() {
                     backgroundMusic.play()
                     .then(() => {
+                        console.log("Audio playing after user interaction");
                         isBackgroundMusicPlaying = true;
-                        musicButton.remove();
+                        
+                        // Remove this event listener once it succeeds
+                        document.removeEventListener('click', playOnInteraction);
+                        document.removeEventListener('touchstart', playOnInteraction);
                     })
-                    .catch(e => console.error("Manual play failed:", e));
-                });
-                document.body.appendChild(musicButton);
+                    .catch(e => console.log("Still couldn't play audio:", e));
+                };
+                
+                // Add event listeners for both click and touch
+                document.addEventListener('click', playOnInteraction, {once: true});
+                document.addEventListener('touchstart', playOnInteraction, {once: true});
             });
-        } else if (backgroundMusic.paused) {
-            backgroundMusic.play()
-            .then(() => isBackgroundMusicPlaying = true)
-            .catch(e => console.log("Could not resume audio:", e));
         }
+    } else if (backgroundMusic.paused) {
+        backgroundMusic.play()
+        .then(() => isBackgroundMusicPlaying = true)
+        .catch(e => console.log("Could not resume audio:", e));
     }
 }
 
