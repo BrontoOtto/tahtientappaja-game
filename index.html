@@ -406,10 +406,10 @@ function createMobileControls() {
     
     // Scale joystick size to be comfortable
     const minDimension = Math.min(canvas.width, canvas.height * 0.3);
-    joystick.radius = minDimension * 0.18; // Slightly larger than original
-    joystick.knobRadius = joystick.radius * 0.6; // Bigger knob for easier control
-    joystick.maxDistance = joystick.radius * 0.9; // Shorter travel distance
-    joystick.deadZone = joystick.radius * 0.15; // 15% dead zone for precision
+    joystick.radius = minDimension * 0.18; // Slightly larger than original 0.15
+    joystick.knobRadius = joystick.radius * 0.5; // Bigger knob for easier control
+    joystick.maxDistance = joystick.radius * 1.1; // Shorter travel distance
+    joystick.deadZone = joystick.radius * 0.1; // 15% dead zone for precision
     
     // Fire button variables kept for compatibility
     fireButton.x = 0;
@@ -2274,13 +2274,11 @@ function update() {
 						(length - joystick.deadZone) / (joystick.maxDistance - joystick.deadZone),
 						1.0
 					);
-					
-					// Apply a non-linear response curve for better control
-					// This makes small movements more precise while still allowing full speed
-					const responseValue = normalizedLength * normalizedLength;
+					// Use a gentler response curve - makes it less aggressive
+					const responseValue = Math.pow(normalizedLength, 1.5); // More gentle curve
 					
 					// Calculate speed based on how far the stick is moved
-					const maxSpeed = 5; // Increased for better responsiveness
+					const maxSpeed = 2.5; // Increased for better responsiveness
 					const moveSpeed = maxSpeed * responseValue;
 					
 					// Apply movement in the joystick direction
