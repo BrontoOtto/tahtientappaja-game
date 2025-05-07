@@ -399,22 +399,23 @@ function detectMobile() {
            (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
 }
 function createMobileControls() {
-    // Position the joystick in the bottom left using relative positioning
-    joystick.baseX = canvas.width * 0.20; // 20% from left edge
+    // Position the joystick in the bottom-middle-right using relative positioning
+    joystick.baseX = canvas.width * 0.65; // 65% from left edge (moved to the right)
     joystick.baseY = canvas.height * 0.85; // 85% from top (15% from bottom)
     joystick.knobX = joystick.baseX;
     joystick.knobY = joystick.baseY;
     
-    // Scale joystick size based on canvas dimensions
+    // Scale joystick size based on canvas dimensions but make it bigger
     const minDimension = Math.min(canvas.width, canvas.height * 0.3);
-    joystick.radius = minDimension * 0.15; // 15% of the smaller dimension
+    joystick.radius = minDimension * 0.22; // Increased from 0.15 to 0.22 (about 50% larger)
     joystick.knobRadius = joystick.radius * 0.5; // Proportional to base
     joystick.maxDistance = joystick.radius * 1.2; // Slightly larger than radius
     
-    // Position the fire button in the bottom right
-    fireButton.x = canvas.width * 0.80; // 80% from left edge
-    fireButton.y = canvas.height * 0.85; // 85% from top
-    fireButton.radius = joystick.radius; // Same size as joystick for consistency
+    // The fire button is no longer needed, but we keep the variable initialized
+    // to prevent errors in any code that might still reference it
+    fireButton.x = 0;
+    fireButton.y = 0;
+    fireButton.radius = 0;
 }
 
 // Fix the loadAllAssets function to use window.enemyImage references:
@@ -517,7 +518,7 @@ function loadAllAssets() {
             }
         }, 2000);
         
-        tempAudio.src = 'tappaja1.mp3';
+        tempAudio.src = 'tappaja.mp3';
     } catch (e) {
         console.error("Audio preload error:", e);
         assetLoaded(); // Count as loaded even if it fails
@@ -782,7 +783,7 @@ function initializeMusic() {
         
         // Create new audio element
         backgroundMusic = new Audio();
-        backgroundMusic.src = 'tappaja1.mp3';
+        backgroundMusic.src = 'tappaja.mp3';
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
         
@@ -823,7 +824,7 @@ function initializeMusic() {
     // For all other devices
     else {
         if (!backgroundMusic) {
-            backgroundMusic = new Audio('tappaja1.mp3');
+            backgroundMusic = new Audio('tappaja.mp3');
             backgroundMusic.loop = true;
             backgroundMusic.volume = 0.5;
             
@@ -2298,8 +2299,8 @@ function update() {
         player.x = canvas.width / 2; // Keep centered during intro
         
         // Check if player reached target position
-        if (player.y <= canvas.height - 100) {
-            player.y = canvas.height - 100;
+        if (player.y <= canvas.height * 0.6) {
+            player.y = canvas.height * 0.6;
             // Leave gameStartSequence true until timer completes
         }
     } else if (playerReady) {
