@@ -228,6 +228,10 @@ function assetLoaded() {
 		let isBackgroundMusicPlaying = false;
 		// Main screen stars
 		const mainScreenStars = [];
+		// Powerup milestone tracking
+		let reachedMilestones = [false, false, false, false];
+		// Global mouse position tracking
+		let mouseX, mouseY;
 		const NUM_MAIN_SCREEN_STARS = 50;
 		let mainScreenStarsAnimationId = null;
 		let mainCharacterAnimFrame = 0;
@@ -1080,7 +1084,8 @@ function restartGame() {
 	shieldHealth = 0;
 	powerup = null;
 	powerupSpawned = false;
-	const reachedMilestones = [false, false, false, false];;
+	// Reset milestone tracking
+	reachedMilestones = [false, false, false, false]
 
     // Remove any existing powerup indicator
     const indicator = document.getElementById('powerupIndicator');
@@ -2278,8 +2283,8 @@ function drawEnemyBullets() {
 }
 // Replace your current update function with this corrected version:
 function update() {
-    // Add variables for mouse position tracking
-    let mouseX, mouseY;
+	// Access the global mouseX and mouseY variables 
+	// (don't redeclare them locally)
     // Make sure we don't run the game loop while loading
     if (isLoading) {
         requestAnimationFrame(update);
@@ -2318,8 +2323,8 @@ function update() {
     const powerupMilestones = [500, 1500, 3000, 5000];
     // Check for powerup milestones
     for (let i = 0; i < powerupMilestones.length; i++) {
-        if (score >= powerupMilestones[i] && !reachedMilestones[i] && !powerup && !powerupActive) {
-            spawnPowerup();
+        if (score >= powerupMilestones[i] && !reachedMilestones[i] && !powerup && !rapidFireActive && !dualFireActive) {
+            spawnPowerup(player.x, player.y - 50);
             reachedMilestones[i] = true;
             break; // Only spawn one powerup at a time
         }
@@ -2343,15 +2348,14 @@ function update() {
 	ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Make background more opaque
 	ctx.fillRect(0, 0, canvas.width, statusBarHeight);
 
-	// Score display - moved to center for better visibility
+	// Score display - positioned to the left
 	ctx.fillStyle = '#4CAF50';
-	const fontSize = Math.max(18, statusBarHeight * 0.5); // Larger font size
+	const fontSize = Math.max(16, statusBarHeight * 0.4); // Adjust font size
 	ctx.font = `bold ${fontSize}px Arial`;
-	ctx.textAlign = 'center';
-	ctx.fillText(`Score: ${score}`, canvas.width * 0.5, statusBarHeight * 0.65);
+	ctx.textAlign = 'left';
+	ctx.fillText(`Score: ${score}`, 20, statusBarHeight * 0.65);
 
-	// HP text and bar
-	// Add HP text
+	// HP text and bar - positioned to the right
 	ctx.fillStyle = '#FFFFFF';
 	ctx.font = `bold ${Math.max(14, statusBarHeight * 0.3)}px Arial`;
 	ctx.textAlign = 'right';
