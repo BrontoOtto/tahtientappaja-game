@@ -227,7 +227,7 @@ function assetLoaded() {
         // Game state global variables
 		let currentScreen = "loading";
 		let loadingLoop;
-		let totalAssets = 12; // Increased by 1 to include the explosion 
+		let totalAssets = 13; // Increased by 1 to include the missile 
 		let keys = {}; // Track pressed keys
 		let isMobile = false; // Will be set based on device detection
 		let joystick = {
@@ -297,6 +297,12 @@ function assetLoaded() {
 		const explosionFrameWidth = 250; // Width of each frame
 		const explosionFrameHeight = 172; // Height of each frame
 		const explosionDuration = 250; // 0.25 seconds for the whole animation
+		// Ohjus (missile) animation variables
+		let ohjusImage = new Image();
+		const ohjusFrameCount = 2; // Two frames for animation
+		const ohjusFrameWidth = 500; // Width of each frame
+		const ohjusFrameHeight = 500; // Height of each frame
+		const ohjusFrameDuration = 200; // Milliseconds per frame
 		// Powerup variables
 		let powerup = null;
 		let powerupSpawned = false;
@@ -313,11 +319,11 @@ function assetLoaded() {
 		let shieldHealth = 0;
 
 		// Powerup spawn rates (percentage chance when defeating an enemy)
-		const POWERUP_SPAWN_RATE = 0.10; // 10% chance to spawn any powerup
+		const POWERUP_SPAWN_RATE = 0.05; // 5% chance to spawn any powerup
 		const POWERUP_TYPES = {
-			RAPID_FIRE: {id: 0, chance: 0.45, color: '#FFD700'}, // 45% of powerups (down from 60%)
-			SHIELD: {id: 1, chance: 0.30, color: '#00BFFF'},     // 30% of powerups (unchanged)
-			DUAL_FIRE: {id: 2, chance: 0.25, color: '#FF00FF'}   // 25% of powerups (up from 10%)
+			RAPID_FIRE: {id: 0, chance: 0.35, color: '#FFD700'}, // 25% of powerups (down from 60%)
+			SHIELD: {id: 1, chance: 0.50, color: '#00BFFF'},     // 30% of powerups (unchanged)
+			DUAL_FIRE: {id: 2, chance: 0.15, color: '#FF00FF'}   // 15% of powerups (up from 10%)
 		};
         let gameLoop;
         let isGameRunning = false;
@@ -506,6 +512,7 @@ function loadAllAssets() {
 	if (!window.circularEnemyImage) window.circularEnemyImage = new Image();
 	if (!window.spinnerEnemyImage) window.spinnerEnemyImage = new Image();
 	if (!window.powerupImage) window.powerupImage = new Image();
+	if (!window.ohjusImage) window.ohjusImage = new Image();
 	if (!window.bossImage) window.bossImage = new Image();
 	if (!window.playerImage) window.playerImage = new Image();
 	if (!window.logoImage) window.logoImage = new Image();
@@ -553,6 +560,7 @@ function loadAllAssets() {
     loadImage(window.playerImage, 'alus1.png');
     loadImage(window.logoImage, 'LOGO.png');
 	loadImage(window.mainCharacterAnimImage, 'alkuanim.png');
+	loadImage(window.ohjusImage, 'ohjus.png');
     
     // Audio loading with simplified approach
     try {
@@ -615,6 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.logoImage = new Image();
 	window.mainCharacterAnimImage = new Image();
 	window.explosionImage = new Image();
+	window.ohjusImage = new Image();
 	
 	// Ensure the start button image is initialized
 	window.startButtonImage = window.startButtonImage || new Image();
@@ -1197,12 +1206,16 @@ function restartGame() {
 				const missile = {
 					x: boss.x,
 					y: boss.y + boss.height / 2,
-					width: 20,
-					height: 30,
+					width: 40, // Larger to match the new image
+					height: 40, // Larger to match the new image
 					hp: 4,
 					speed: 0.7,
 					isMissile: true,
-					points: 20
+					points: 20,
+					// Animation properties
+					animFrame: 0,
+					animTimer: now,
+					isOhjus: true  // Flag to identify as ohjus missile
 				};
 				enemies.push(missile);
 				lastBossMissile = now;
@@ -2215,6 +2228,15 @@ function updateEnemyBullets() {
 					} else {
 						enemy.y += enemy.speed;
 					}
+					
+					// Update animation frame for ohjus missiles
+					if (enemy.isOhjus) {
+						const now = Date.now();
+						if (now - enemy.animTimer > ohjusFrameDuration) {
+							enemy.animFrame = (enemy.animFrame + 1) % ohjusFrameCount;
+							enemy.animTimer = now;
+						}
+					}
 				}
 				// Handle regular and shooting enemies
 				else if (!enemy.isCircular) {
@@ -2310,25 +2332,48 @@ function drawEnemies() {
             ctx.restore();
         }
         else if (enemy.isMissile) {
-            // Draw missile...
-			ctx.fillStyle = '#FF3300';
-            ctx.beginPath();
-            // Missile body
-            ctx.moveTo(enemy.x, enemy.y - enemy.height/2);
-            ctx.lineTo(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
-            ctx.lineTo(enemy.x - enemy.width/2, enemy.y + enemy.height/2);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Fire trail
-            ctx.fillStyle = 'orange';
-            ctx.beginPath();
-            ctx.moveTo(enemy.x - enemy.width/4, enemy.y + enemy.height/2);
-            ctx.lineTo(enemy.x, enemy.y + enemy.height);
-            ctx.lineTo(enemy.x + enemy.width/4, enemy.y + enemy.height/2);
-            ctx.closePath();
-            ctx.fill();
-        } 
+			if (enemy.isOhjus && window.ohjusImage && window.ohjusImage.complete) {
+				// Calculate angle to player for rotation
+				const dx = player.x - enemy.x;
+				const dy = player.y - enemy.y;
+				const angle = Math.atan2(dy, dx) + Math.PI/2; // Add 90 degrees to point upward
+				
+				// Draw animated ohjus with rotation
+				ctx.save();
+				ctx.translate(enemy.x, enemy.y);
+				ctx.rotate(angle);
+				
+				// Draw the current animation frame from the sprite sheet
+				ctx.drawImage(
+					window.ohjusImage,
+					0, enemy.animFrame * ohjusFrameHeight, 
+					ohjusFrameWidth, ohjusFrameHeight,
+					-enemy.width, -enemy.height,
+					enemy.width * 2, enemy.height * 2
+				);
+				
+				ctx.restore();
+			} else {
+				// Fallback for if the image isn't loaded
+				ctx.fillStyle = '#FF3300';
+				ctx.beginPath();
+				// Missile body
+				ctx.moveTo(enemy.x, enemy.y - enemy.height/2);
+				ctx.lineTo(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+				ctx.lineTo(enemy.x - enemy.width/2, enemy.y + enemy.height/2);
+				ctx.closePath();
+				ctx.fill();
+				
+				// Fire trail
+				ctx.fillStyle = 'orange';
+				ctx.beginPath();
+				ctx.moveTo(enemy.x - enemy.width/4, enemy.y + enemy.height/2);
+				ctx.lineTo(enemy.x, enemy.y + enemy.height);
+				ctx.lineTo(enemy.x + enemy.width/4, enemy.y + enemy.height/2);
+				ctx.closePath();
+				ctx.fill();
+			}
+		}
         else if (enemy.isCircular) {
             // Apply rotation for circular enemies
             ctx.save();
