@@ -3,6 +3,10 @@
 <head>
     <title>Tahtien Tappaja</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta http-equiv="ScreenOrientation" content="autoRotate:disabled">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="mobile-web-app-capable" content="yes">
     <style>
         body {
             margin: 0;
@@ -118,6 +122,32 @@
 		</div>
 	</div>
     <script>
+// Screen orientation locking function
+function lockScreenOrientation() {
+    try {
+        // For most modern browsers
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('portrait')
+                .then(() => {
+                    console.log('Screen orientation locked to portrait');
+                })
+                .catch(error => {
+                    console.error('Screen orientation lock error:', error);
+                });
+        } 
+        // For older iOS
+        else if (window.orientation !== undefined) {
+            // Can't actually lock, but can detect changes
+            window.addEventListener('orientationchange', function() {
+                console.log('Orientation changed to: ', window.orientation);
+                // Force portrait layout regardless of physical orientation
+                resizeCanvas();
+            });
+        }
+    } catch (error) {
+        console.error('Error setting up orientation lock:', error);
+    }
+}
 // Asset loading handler
 // Modify your assetLoaded function to handle the transition better
 function assetLoaded() {
@@ -568,6 +598,11 @@ function loadAllAssets() {
 // Add this at the end of your script block
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM loaded, initializing game...");
+	
+	// Lock screen orientation for mobile devices
+    if (detectMobile()) {
+        lockScreenOrientation();
+    }
     
     // Initialize image objects
     window.enemyImage = new Image();
