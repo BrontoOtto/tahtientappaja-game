@@ -398,23 +398,8 @@ function detectMobile() {
            (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
 }
 function createMobileControls() {
-    // Position the joystick in a more comfortable position
-    joystick.baseX = canvas.width * 0.75; // 75% from left (bottom-right corner)
-    joystick.baseY = canvas.height * 0.80; // 80% from top
-    joystick.knobX = joystick.baseX;
-    joystick.knobY = joystick.baseY;
-    
-    // Scale joystick size to be comfortable
-    const minDimension = Math.min(canvas.width, canvas.height * 0.3);
-    joystick.radius = minDimension * 0.18; // Slightly larger than original 0.15
-    joystick.knobRadius = joystick.radius * 0.5; // Bigger knob for easier control
-    joystick.maxDistance = joystick.radius * 1.1; // Shorter travel distance
-    joystick.deadZone = joystick.radius * 0.1; // 15% dead zone for precision
-    
-    // Fire button variables kept for compatibility
-    fireButton.x = 0;
-    fireButton.y = 0;
-    fireButton.radius = 0;
+    // No longer needed with new touch control system
+    // Keep empty in case it's referenced elsewhere
 }
 
 // Fix the loadAllAssets function to use window.enemyImage references:
@@ -737,7 +722,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('JAKKEONGEI', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -2238,48 +2223,35 @@ function update() {
     drawStars();
     
     // Player movement and control
-    if (gameStartSequence && !playerReady) {
-        // Smoothly bring player up from bottom of screen
-        player.y -= 0.5;
-        player.x = canvas.width / 2; // Keep centered during intro
-        
-        // Check if player reached target position
-        if (player.y <= canvas.height * 0.6) {
-            player.y = canvas.height * 0.6;
-            // Leave gameStartSequence true until timer completes
-        }
-    } else if (playerReady) {
-        // Inside your update function where mobile controls are handled
-		if (isMobile) {
-			// Mobile joystick controls
-			if (joystick.active) {
-				// Calculate direction vector
-				const dx = joystick.knobX - joystick.baseX;
-				const dy = joystick.knobY - joystick.baseY;
-				
-				// Calculate length of movement from center
-				const length = Math.sqrt(dx * dx + dy * dy);
-				
-				// Use the dead zone
-				if (length > joystick.deadZone) {
-					// Calculate normalized movement (considering the dead zone)
-					const normalizedLength = Math.min(
-						(length - joystick.deadZone) / (joystick.maxDistance - joystick.deadZone),
-						1.0
-					);
-					// Use a gentler response curve - makes it less aggressive
-					const responseValue = Math.pow(normalizedLength, 1.5); // More gentle curve
-					
-					// Calculate speed based on how far the stick is moved
-					const maxSpeed = 2.5; // Increased for better responsiveness
-					const moveSpeed = maxSpeed * responseValue;
-					
-					// Apply movement in the joystick direction
-					player.x += (dx / length) * moveSpeed;
-					player.y += (dy / length) * moveSpeed;
-				}
-			}
-		} else {
+	if (gameStartSequence && !playerReady) {
+		// Smoothly bring player up from bottom of screen
+		player.y -= 0.5;
+		player.x = canvas.width / 2; // Keep centered during intro
+		
+		// Check if player reached target position
+		if (player.y <= canvas.height * 0.6) { // 60% from top (higher position)
+			player.y = canvas.height * 0.6;
+			// Leave gameStartSequence true until timer completes
+		}
+	} else if (playerReady) {
+		// Universal touch/mouse follow control system
+		if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
+			// Create smooth following of touch/mouse position
+			const targetX = mouseX;
+			const targetY = mouseY;
+			
+			// Smoothly interpolate toward the target position (feels more fluid)
+			player.x = player.x + (targetX - player.x) * 0.2;
+			player.y = player.y + (targetY - player.y) * 0.2;
+		}
+		
+		// Always shoot automatically when player is ready
+		shoot();
+		
+		// Keep player within bounds
+		player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
+		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
+	} else {
             // Desktop mouse controls
 			// Make sure we have mouseX and mouseY variables set from mousemove events
 			if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
@@ -2505,36 +2477,37 @@ function updatePlayerMovement() {
 		canvas.addEventListener('gesturestart', function(e) {
 			e.preventDefault();
 		});
-		// Add touch support
+		// Add touch support - simplified version
 		canvas.addEventListener('touchstart', (e) => {
 			e.preventDefault();
 			
 			if (!playerReady) return;
 			
 			const rect = canvas.getBoundingClientRect();
+			const touch = e.touches[0]; // Get the first touch
 			
-			for (let i = 0; i < e.touches.length; i++) {
-				const touch = e.touches[i];
-				const touchX = touch.clientX - rect.left;
-				const touchY = touch.clientY - rect.top;
-				
-				// Normalize touchX and touchY to the canvas scale
-				const normalizedX = touchX * (canvas.width / rect.width);
-				const normalizedY = touchY * (canvas.height / rect.height);
-				
-				// Check if the touch is on the joystick (now in the middle/right area)
-				const joystickDistance = Math.sqrt(
-					Math.pow(normalizedX - joystick.baseX, 2) + 
-					Math.pow(normalizedY - joystick.baseY, 2)
-				);
-				
-				if (joystickDistance <= joystick.radius) {
-					joystick.active = true;
-					joystick.knobX = normalizedX;
-					joystick.knobY = normalizedY;
-				}
-			}
+			// Set mouseX and mouseY from touch position
+			mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+			mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
 		}, { passive: false });
+
+		canvas.addEventListener('touchmove', (e) => {
+			e.preventDefault();
+			
+			if (!playerReady) return;
+			
+			const rect = canvas.getBoundingClientRect();
+			const touch = e.touches[0]; // Get the first touch
+			
+			// Update mouseX and mouseY from touch position
+			mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
+			mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+		}, { passive: false });
+
+		// Can remove touchend handler or simplify it
+		canvas.addEventListener('touchend', (e) => {
+			// Optional - can leave empty or remove
+		});
 
 
 		canvas.addEventListener('touchmove', (e) => {
