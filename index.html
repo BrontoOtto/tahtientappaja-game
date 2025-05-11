@@ -283,7 +283,7 @@ function assetLoaded() {
 		let shieldHealth = 0;
 
 		// Powerup spawn rates (percentage chance when defeating an enemy)
-		const POWERUP_SPAWN_RATE = 0.12; // 12% chance to spawn any powerup
+		const POWERUP_SPAWN_RATE = 0.10; // 10% chance to spawn any powerup
 		const POWERUP_TYPES = {
 			RAPID_FIRE: {id: 0, chance: 0.45, color: '#FFD700'}, // 45% of powerups (down from 60%)
 			SHIELD: {id: 1, chance: 0.30, color: '#00BFFF'},     // 30% of powerups (unchanged)
@@ -1645,16 +1645,31 @@ function endGame() {
 		// Add this function to spawn the powerup
 function spawnPowerup(x, y) {
     // Determine which powerup to spawn based on rarity
-    const random = Math.random();
+    let random = Math.random();
     let powerupType;
     
-    // Use cumulative probabilities for clearer logic
-    if (random < POWERUP_TYPES.DUAL_FIRE.chance) {
-        powerupType = POWERUP_TYPES.DUAL_FIRE.id;
-    } else if (random < POWERUP_TYPES.DUAL_FIRE.chance + POWERUP_TYPES.SHIELD.chance) {
-        powerupType = POWERUP_TYPES.SHIELD.id;
-    } else {
-        powerupType = POWERUP_TYPES.RAPID_FIRE.id;
+    // Skip dual fire powerups if player already has it
+    if (dualFireActive) {
+        // Adjust the random value to only consider the other two powerup types
+        // Normalize between SHIELD (30%) and RAPID_FIRE (45%)
+        const adjustedShieldChance = POWERUP_TYPES.SHIELD.chance / 
+            (POWERUP_TYPES.SHIELD.chance + POWERUP_TYPES.RAPID_FIRE.chance);
+        
+        if (random < adjustedShieldChance) {
+            powerupType = POWERUP_TYPES.SHIELD.id;
+        } else {
+            powerupType = POWERUP_TYPES.RAPID_FIRE.id;
+        }
+    }
+    // Normal distribution when dual fire is not active
+    else {
+        if (random < POWERUP_TYPES.DUAL_FIRE.chance) {
+            powerupType = POWERUP_TYPES.DUAL_FIRE.id;
+        } else if (random < POWERUP_TYPES.DUAL_FIRE.chance + POWERUP_TYPES.SHIELD.chance) {
+            powerupType = POWERUP_TYPES.SHIELD.id;
+        } else {
+            powerupType = POWERUP_TYPES.RAPID_FIRE.id;
+        }
     }
     
     powerup = {
@@ -1952,7 +1967,8 @@ function updateBullets() {
 					score += enemy.points;
 					scoreElement.textContent = score;
 					
-					// Chance to spawn a powerup when defeating an enemy
+					// Chance to spawn a powerup ONLY when defeating an enemy with bullets
+					// (not by collision with player)
 					if (Math.random() < POWERUP_SPAWN_RATE) {
 						spawnPowerup(enemy.x, enemy.y);
 					}
@@ -2202,6 +2218,10 @@ function updateEnemyBullets() {
 					
 					// Add explosion at the collision point
 					createExplosion(enemy.x, enemy.y);
+					
+					// Mark that this enemy was destroyed by collision, not by bullets
+					// (so no powerup will spawn from this enemy)
+					enemy.destroyedByCollision = true;
 					
 					enemies.splice(i, 1);
 					if (circularGroup) {
