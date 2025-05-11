@@ -121,26 +121,35 @@
 // Asset loading handler
 // Modify your assetLoaded function to handle the transition better
 function assetLoaded() {
-    assetsLoaded++;
-    console.log("Asset loaded. Total: " + assetsLoaded + "/" + totalAssets);
-    
-    // If all assets are loaded, switch to start screen
-    if (assetsLoaded >= totalAssets) {
-        console.log("All assets loaded, switching to start screen");
+    try {
+        assetsLoaded++;
+        console.log("Asset loaded. Total: " + assetsLoaded + "/" + totalAssets);
         
-        // Make sure we stop the loading animation
-        if (loadingLoop) {
-            cancelAnimationFrame(loadingLoop);
-            loadingLoop = null;
+        // If all assets are loaded, switch to start screen
+        if (assetsLoaded >= totalAssets) {
+            console.log("All assets loaded, switching to start screen");
+            
+            // Make sure we stop the loading animation
+            if (loadingLoop) {
+                cancelAnimationFrame(loadingLoop);
+                loadingLoop = null;
+            }
+            
+            // Final clear of the canvas to remove loading screen
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            setTimeout(() => {
+                switchScreen("start");
+            }, 500);
         }
-        
-        // Final clear of the canvas to remove loading screen
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        setTimeout(() => {
+    } catch (error) {
+        console.error("Error in assetLoaded:", error);
+        // Force proceed if there's an error
+        if (assetsLoaded < totalAssets) {
+            assetsLoaded = totalAssets;
             switchScreen("start");
-        }, 500);
+        }
     }
 }
         const canvas = document.getElementById('gameCanvas');
@@ -275,6 +284,7 @@ function assetLoaded() {
 			RAPID_FIRE: {id: 0, chance: 0.60, color: '#FFD700'}, // 60% of powerups (7.2% overall)
 			SHIELD: {id: 1, chance: 0.30, color: '#00BFFF'},     // 30% of powerups (3.6% overall)
 			DUAL_FIRE: {id: 2, chance: 0.10, color: '#FF00FF'}   // 10% of powerups (1.2% overall)
+		};
         let gameLoop;
         let isGameRunning = false;
         let lastShot = 0;
@@ -454,7 +464,20 @@ function loadAllAssets() {
         };
         img.src = src;
     }
-    
+    // Ensure image objects are initialized before loading
+	if (!window.startButtonImage) window.startButtonImage = new Image();
+	if (!window.explosionImage) window.explosionImage = new Image();
+	if (!window.enemyImage) window.enemyImage = new Image();
+	if (!window.shootingEnemyImage) window.shootingEnemyImage = new Image();
+	if (!window.circularEnemyImage) window.circularEnemyImage = new Image();
+	if (!window.spinnerEnemyImage) window.spinnerEnemyImage = new Image();
+	if (!window.powerupImage) window.powerupImage = new Image();
+	if (!window.bossImage) window.bossImage = new Image();
+	if (!window.playerImage) window.playerImage = new Image();
+	if (!window.logoImage) window.logoImage = new Image();
+	if (!window.mainCharacterAnimImage) window.mainCharacterAnimImage = new Image();
+	console.log("Image objects initialized for loading");
+	
     // Load all images
 	loadImage(window.startButtonImage, 'start.png');
 	loadImage(window.explosionImage, 'explo.png');
@@ -1050,11 +1073,14 @@ function restartGame() {
     lastGroupSpawn = Date.now();
     
     // Reset powerups
-    powerupActive = false;
-    powerupBulletsLeft = 0;
-    powerup = null;
-    powerupSpawned = false;
-    reachedMilestones = [false, false, false, false];
+	rapidFireActive = false;
+	rapidFireBulletsLeft = 0;
+	dualFireActive = false;
+	shieldActive = false;
+	shieldHealth = 0;
+	powerup = null;
+	powerupSpawned = false;
+	const reachedMilestones = [false, false, false, false];;
 
     // Remove any existing powerup indicator
     const indicator = document.getElementById('powerupIndicator');
@@ -1303,6 +1329,12 @@ function animateMainCharacter() {
     updateStartButton();
 }
 function updateStartButton() {
+	// Ensure start button image exists
+	if (!window.startButtonImage) {
+		window.startButtonImage = new Image();
+		window.startButtonImage.src = 'start.png';
+		console.log("Created missing start button image");
+	}
     if (!window.startButtonImage || !window.startButtonImage.complete) {
         console.log("Start button image not ready yet");
         // Try again in a moment
@@ -2246,6 +2278,8 @@ function drawEnemyBullets() {
 }
 // Replace your current update function with this corrected version:
 function update() {
+    // Add variables for mouse position tracking
+    let mouseX, mouseY;
     // Make sure we don't run the game loop while loading
     if (isLoading) {
         requestAnimationFrame(update);
@@ -2281,7 +2315,7 @@ function update() {
         // Spawn boss
         spawnBoss();
     }
-    
+    const powerupMilestones = [500, 1500, 3000, 5000];
     // Check for powerup milestones
     for (let i = 0; i < powerupMilestones.length; i++) {
         if (score >= powerupMilestones[i] && !reachedMilestones[i] && !powerup && !powerupActive) {
@@ -2340,17 +2374,6 @@ function update() {
 	ctx.strokeStyle = '#FFFFFF';
 	ctx.lineWidth = 1;
 	ctx.strokeRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
-
-    // HP bar
-    const hpBarWidth = Math.min(canvas.width * 0.3, 120);
-    const hpBarHeight = statusBarHeight * 0.4;
-    const hpPercent = player.hp / player.maxHp;
-
-    ctx.fillStyle = '#333';
-    ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth, hpBarHeight);
-
-    ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
-    ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth * hpPercent, hpBarHeight);
 
     // UI separators
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
