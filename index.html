@@ -285,9 +285,9 @@ function assetLoaded() {
 		// Powerup spawn rates (percentage chance when defeating an enemy)
 		const POWERUP_SPAWN_RATE = 0.12; // 12% chance to spawn any powerup
 		const POWERUP_TYPES = {
-			RAPID_FIRE: {id: 0, chance: 0.60, color: '#FFD700'}, // 60% of powerups (7.2% overall)
-			SHIELD: {id: 1, chance: 0.30, color: '#00BFFF'},     // 30% of powerups (3.6% overall)
-			DUAL_FIRE: {id: 2, chance: 0.10, color: '#FF00FF'}   // 10% of powerups (1.2% overall)
+			RAPID_FIRE: {id: 0, chance: 0.45, color: '#FFD700'}, // 45% of powerups (down from 60%)
+			SHIELD: {id: 1, chance: 0.30, color: '#00BFFF'},     // 30% of powerups (unchanged)
+			DUAL_FIRE: {id: 2, chance: 0.25, color: '#FF00FF'}   // 25% of powerups (up from 10%)
 		};
         let gameLoop;
         let isGameRunning = false;
@@ -1648,6 +1648,7 @@ function spawnPowerup(x, y) {
     const random = Math.random();
     let powerupType;
     
+    // Use cumulative probabilities for clearer logic
     if (random < POWERUP_TYPES.DUAL_FIRE.chance) {
         powerupType = POWERUP_TYPES.DUAL_FIRE.id;
     } else if (random < POWERUP_TYPES.DUAL_FIRE.chance + POWERUP_TYPES.SHIELD.chance) {
@@ -1659,14 +1660,16 @@ function spawnPowerup(x, y) {
     powerup = {
         x: x,
         y: y,
-        width: 25,
-        height: 25,
+        width: 30, // Slightly larger
+        height: 30, // Slightly larger
         speed: 1.2,
-        type: powerupType
+        type: powerupType,
+        spawnTime: Date.now() // Track when it was spawned
     };
     
     powerupSpawned = true;
 }
+
 function updatePowerup() {
     if (!powerup) return;
     
@@ -1679,23 +1682,60 @@ function updatePowerup() {
         width: player.size,
         height: player.size
     })) {
-        // Apply powerup effect based on type
+        // Handle different powerup types
+        let appliedPowerup = true;
+        
         switch(powerup.type) {
             case POWERUP_TYPES.RAPID_FIRE.id:
+                // Always apply rapid fire
                 rapidFireActive = true;
                 rapidFireBulletsLeft = 300;
                 break;
+                
             case POWERUP_TYPES.SHIELD.id:
-                shieldActive = true;
-                shieldHealth = 1; // Shield can absorb one hit
+                // Only apply shield if player doesn't already have one
+                if (!shieldActive) {
+                    shieldActive = true;
+                    shieldHealth = 1;
+                } else {
+                    // Already has shield, give points instead
+                    score += 200;
+                    scoreElement.textContent = score;
+                    appliedPowerup = false;
+                }
                 break;
+                
             case POWERUP_TYPES.DUAL_FIRE.id:
-                dualFireActive = true; // Never expires
+                // Always apply dual fire (stacks with rapid fire)
+                dualFireActive = true;
                 break;
         }
         
-        // Show a pickup effect
+        // Show pickup effect
         createExplosion(powerup.x, powerup.y, 0.5);
+        
+        // Add points for all powerup pickups
+        score += 200;
+        scoreElement.textContent = score;
+        
+        // Show what powerup was collected
+        if (appliedPowerup) {
+            let message = "";
+            switch(powerup.type) {
+                case POWERUP_TYPES.RAPID_FIRE.id:
+                    message = "RAPID FIRE!";
+                    break;
+                case POWERUP_TYPES.SHIELD.id:
+                    message = "SHIELD!";
+                    break;
+                case POWERUP_TYPES.DUAL_FIRE.id:
+                    message = "DUAL FIRE!";
+                    break;
+            }
+            
+            // Show floating text
+            // (Could implement this later)
+        }
         
         // Remove the powerup
         powerup = null;
@@ -1711,57 +1751,65 @@ function updatePowerup() {
 function drawPowerup() {
     if (!powerup) return;
     
-    // Draw powerup based on type
+    // Save the context for transformations
     ctx.save();
     
-    // Draw colored circle for powerup
+    // Get color based on powerup type
     let powerupColor;
     switch(powerup.type) {
         case POWERUP_TYPES.RAPID_FIRE.id:
-            powerupColor = POWERUP_TYPES.RAPID_FIRE.color;
+            powerupColor = POWERUP_TYPES.RAPID_FIRE.color; // Gold/yellow
             break;
         case POWERUP_TYPES.SHIELD.id:
-            powerupColor = POWERUP_TYPES.SHIELD.color;
+            powerupColor = POWERUP_TYPES.SHIELD.color; // Blue
             break;
         case POWERUP_TYPES.DUAL_FIRE.id:
-            powerupColor = POWERUP_TYPES.DUAL_FIRE.color;
+            powerupColor = POWERUP_TYPES.DUAL_FIRE.color; // Purple/Magenta
             break;
         default:
             powerupColor = '#FFFFFF';
     }
     
-    // Draw powerup circle with pulsing effect
-    ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 150) * 0.4;
-    ctx.fillStyle = powerupColor;
-    ctx.beginPath();
-    ctx.arc(powerup.x, powerup.y, powerup.width * 0.7, 0, Math.PI * 2);
-    ctx.fill();
+    // Add a pulsing glow effect
+    ctx.globalAlpha = 0.6 + Math.sin(Date.now() / 150) * 0.3;
     
-    // Draw inner powerup symbol
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = '#FFFFFF';
-    
-    // Different symbols for different powerups
-    if (powerup.type === POWERUP_TYPES.RAPID_FIRE.id) {
-        // 'R' for Rapid Fire - triple bullets
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('R', powerup.x, powerup.y);
-    } else if (powerup.type === POWERUP_TYPES.SHIELD.id) {
-        // 'S' for Shield
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('S', powerup.x, powerup.y);
-    } else if (powerup.type === POWERUP_TYPES.DUAL_FIRE.id) {
-        // 'D' for Dual Fire - double bullets
-        ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('D', powerup.x, powerup.y);
+    // Draw the powerup with colored tint
+    if (window.powerupImage && window.powerupImage.complete) {
+        // First draw a colored glow underneath
+        ctx.beginPath();
+        ctx.arc(powerup.x, powerup.y, powerup.width * 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = powerupColor;
+        ctx.fill();
+        
+        // Draw the actual powerup image
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(
+            window.powerupImage,
+            powerup.x - powerup.width/2,
+            powerup.y - powerup.width/2,
+            powerup.width,
+            powerup.width
+        );
+        
+        // Apply a color overlay
+        ctx.globalCompositeOperation = 'color';
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = powerupColor;
+        ctx.fillRect(
+            powerup.x - powerup.width/2,
+            powerup.y - powerup.width/2,
+            powerup.width,
+            powerup.width
+        );
+    } else {
+        // Fallback if image isn't loaded
+        ctx.beginPath();
+        ctx.arc(powerup.x, powerup.y, powerup.width/2, 0, Math.PI * 2);
+        ctx.fillStyle = powerupColor;
+        ctx.fill();
     }
     
+    // Restore the context
     ctx.restore();
 }
 
