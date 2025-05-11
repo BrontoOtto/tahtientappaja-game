@@ -2135,19 +2135,19 @@ function update() {
     
     // Check for boss spawn at 3:30 (210 seconds)
     if (gameTime >= 189 && !bossSpawned) {
-		// Stop enemy spawning 9 seconds before boss appears
-		regularEnemiesDisabled = true;
-	}
+        // Stop enemy spawning 9 seconds before boss appears
+        regularEnemiesDisabled = true;
+    }
 
-	if (gameTime >= 180 && !bossSpawned) {
-		// Clear all existing enemies
-		enemies.length = 0;
-		enemyBullets.length = 0;
-		circularGroup = null;
-		
-		// Spawn boss
-		spawnBoss();
-	}
+    if (gameTime >= 180 && !bossSpawned) {
+        // Clear all existing enemies
+        enemies.length = 0;
+        enemyBullets.length = 0;
+        circularGroup = null;
+        
+        // Spawn boss
+        spawnBoss();
+    }
     
     // Check for powerup milestones
     for (let i = 0; i < powerupMilestones.length; i++) {
@@ -2170,48 +2170,42 @@ function update() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Add enhanced UI elements - using canvas drawing for consistent display across all devices
-	// Update the update() function, around line 2090 where the UI elements are drawn
-	// Replace the UI drawing code with this:
+    // Add UI elements
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    const statusBarHeight = Math.max(40, canvas.height * 0.06); 
+    ctx.fillRect(0, 0, canvas.width, statusBarHeight); 
 
-	// Add enhanced UI elements - using canvas drawing for consistent display across all devices
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-	const statusBarHeight = Math.max(40, canvas.height * 0.06); // Min 40px or 6% of height
-	ctx.fillRect(0, 0, canvas.width, statusBarHeight); // Top bar for stats
+    // Score display
+    ctx.fillStyle = '#4CAF50';
+    ctx.font = `bold ${Math.max(14, statusBarHeight * 0.45)}px Arial`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`Score: ${score}`, 10, statusBarHeight * 0.65);
 
-	// Make score more prominent
-	ctx.fillStyle = '#4CAF50';
-	ctx.font = `bold ${Math.max(14, statusBarHeight * 0.45)}px Arial`; // Scale font size
-	ctx.textAlign = 'left';
-	ctx.fillText(`Score: ${score}`, 10, statusBarHeight * 0.65);
+    // Powerup status
+    if (powerupActive) {
+        ctx.fillStyle = 'yellow';
+        ctx.font = `bold ${Math.max(14, statusBarHeight * 0.45)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`Rapid Fire: ${powerupBulletsLeft}`, canvas.width / 2, statusBarHeight * 0.65);
+    }
 
-	// Display Powerup status if active
-	if (powerupActive) {
-		ctx.fillStyle = 'yellow';
-		ctx.font = `bold ${Math.max(14, statusBarHeight * 0.45)}px Arial`;
-		ctx.textAlign = 'center';
-		ctx.fillText(`Rapid Fire: ${powerupBulletsLeft}`, canvas.width / 2, statusBarHeight * 0.65);
-	}
+    // HP bar
+    const hpBarWidth = Math.min(canvas.width * 0.3, 120);
+    const hpBarHeight = statusBarHeight * 0.4;
+    const hpPercent = player.hp / player.maxHp;
 
-	// Display HP as a bar - Scale to screen width for responsive design
-	const hpBarWidth = Math.min(canvas.width * 0.3, 120); // Responsive width, max 120px
-	const hpBarHeight = statusBarHeight * 0.4;
-	const hpPercent = player.hp / player.maxHp;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth, hpBarHeight);
 
-	// HP Bar background
-	ctx.fillStyle = '#333';
-	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth, hpBarHeight);
+    ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
+    ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth * hpPercent, hpBarHeight);
 
-	// HP Bar fill with color based on percentage
-	ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
-	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.3, hpBarWidth * hpPercent, hpBarHeight);
-
-	// Add separators for UI sections
-	ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-	ctx.fillRect(canvas.width / 3, 5, 1, 30);
-	ctx.fillRect(canvas.width * 2 / 3, 5, 1, 30);
+    // UI separators
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.fillRect(canvas.width / 3, 5, 1, 30);
+    ctx.fillRect(canvas.width * 2 / 3, 5, 1, 30);
     
-    // Update and draw background first
+    // Update and draw background
     updateStars();
     
     // Update and draw boss if it exists
@@ -2223,70 +2217,39 @@ function update() {
     drawStars();
     
     // Player movement and control
-	if (gameStartSequence && !playerReady) {
-		// Smoothly bring player up from bottom of screen
-		player.y -= 0.5;
-		player.x = canvas.width / 2; // Keep centered during intro
-		
-		// Check if player reached target position
-		if (player.y <= canvas.height * 0.6) { // 60% from top (higher position)
-			player.y = canvas.height * 0.6;
-			// Leave gameStartSequence true until timer completes
-		}
-	} else if (playerReady) {
-		// Universal touch/mouse follow control system
-		if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
-			// Create smooth following of touch/mouse position
-			const targetX = mouseX;
-			const targetY = mouseY;
-			
-			// Smoothly interpolate toward the target position (feels more fluid)
-			player.x = player.x + (targetX - player.x) * 0.2;
-			player.y = player.y + (targetY - player.y) * 0.2;
-		}
-		
-		// Always shoot automatically when player is ready
-		shoot();
-		
-		// Keep player within bounds
-		player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
-		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
-	} else {
-            // Desktop mouse controls
-			// Make sure we have mouseX and mouseY variables set from mousemove events
-			if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
-				// Smooth movement toward mouse position
-				const targetX = mouseX;
-				const targetY = mouseY;
-				
-				// Interpolate position for smooth movement
-				player.x = player.x + (targetX - player.x) * 0.2; // Adjust factor for faster/slower movement
-				player.y = player.y + (targetY - player.y) * 0.2;
-			}
-		}
-		
-		// Automatic shooting for all control types
-		shoot();
+    if (gameStartSequence && !playerReady) {
+        // Smoothly bring player up from bottom of screen
+        player.y -= 0.5;
+        player.x = canvas.width / 2; // Keep centered during intro
         
+        // Check if player reached target position
+        if (player.y <= canvas.height * 0.6) { // 60% from top (higher position)
+            player.y = canvas.height * 0.6;
+            // Leave gameStartSequence true until timer completes
+        }
+    } else if (playerReady) {
+        // Touch/mouse follow controls
+        if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
+            // Smoothly interpolate toward touch/mouse position
+            player.x = player.x + (mouseX - player.x) * 0.2;
+            player.y = player.y + (mouseY - player.y) * 0.2;
+        }
+        
+        // Always shoot when player is ready
+        shoot();
         
         // Keep player within bounds
         player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
-		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
-		} else {
-			// Always allow mouse movement control when player is ready
-			if (playerReady && !isMobile) {
-				player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, mouseX));
-				player.y = Math.max(canvas.height/3, Math.min(canvas.height - player.size/2, mouseY));
-			}
-		}
+        player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
+    }
 
     // Check invulnerability timer
-	if (playerInvulnerable) {
-		// Only remove invulnerability if player is ready
-		if (playerReady && Date.now() - playerInvulnerableTimer >= 3000) { // 3 seconds after player is ready
-			playerInvulnerable = false;
-		}
-	}
+    if (playerInvulnerable) {
+        // Only remove invulnerability if player is ready
+        if (playerReady && Date.now() - playerInvulnerableTimer >= 3000) { // 3 seconds after player is ready
+            playerInvulnerable = false;
+        }
+    }
     
     // Update game elements
     updateBullets();
@@ -2300,47 +2263,43 @@ function update() {
     drawEnemies();
     
     // Draw player with animation
-	updatePlayerAnimation();
-	if (window.playerImage.complete) {
-		// Calculate source Y position based on current frame (vertical sprite sheet)
-		const sourceX = 0; // X position is always 0 in a vertical sprite sheet
-		const sourceY = playerAnimFrame * playerFrameHeight; // Y changes based on frame
-		
-		// Draw the current frame
-		ctx.drawImage(
-			window.playerImage,
-			sourceX, sourceY, playerFrameWidth, playerFrameHeight, // Source rectangle
-			player.x - player.size/2, player.y - player.size/2,    // Destination position
-			player.size, player.size                              // Destination size
-		);
-	} else {
-		// Fallback if image isn't loaded
-		ctx.fillStyle = '#4CAF50';
-		ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
-	}
-	// Draw explosions
-	updateAndDrawExplosions();
+    updatePlayerAnimation();
+    if (window.playerImage.complete) {
+        // Apply visual effect if player is invulnerable
+        if (playerInvulnerable) {
+            // Make player flash by changing opacity based on time
+            ctx.globalAlpha = 0.4 + Math.sin(Date.now() / 100) * 0.4; // Values between 0.0 and 0.8
+        }
+        
+        // Draw player
+        const sourceX = 0;
+        const sourceY = playerAnimFrame * playerFrameHeight;
+        
+        ctx.drawImage(
+            window.playerImage,
+            sourceX, sourceY, playerFrameWidth, playerFrameHeight,
+            player.x - player.size/2, player.y - player.size/2,
+            player.size, player.size
+        );
+        
+        // Reset global alpha
+        if (playerInvulnerable) {
+            ctx.globalAlpha = 1.0;
+        }
+    } else {
+        // Fallback if image isn't loaded
+        if (playerInvulnerable) {
+            ctx.globalAlpha = 0.4 + Math.sin(Date.now() / 100) * 0.4;
+        }
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+        if (playerInvulnerable) {
+            ctx.globalAlpha = 1.0;
+        }
+    }
     
-
-    
-	// Draw mobile controls if on mobile
-	if (isMobile) {
-		// Draw joystick base
-		ctx.globalAlpha = 0.3;
-		ctx.fillStyle = '#FFFFFF';
-		ctx.beginPath();
-		ctx.arc(joystick.baseX, joystick.baseY, joystick.radius, 0, Math.PI * 2);
-		ctx.fill();
-		
-		// Draw joystick knob
-		ctx.globalAlpha = 0.5;
-		ctx.fillStyle = '#4CAF50';
-		ctx.beginPath();
-		ctx.arc(joystick.knobX, joystick.knobY, joystick.knobRadius, 0, Math.PI * 2);
-		ctx.fill();
-		
-		ctx.globalAlpha = 1.0; // Reset alpha
-	}
+    // Draw explosions
+    updateAndDrawExplosions();
     
     // Update explosion animation
     if (explosionAnimation) {
