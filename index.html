@@ -815,7 +815,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1111,6 +1111,9 @@ function startGame() {
 }
 function restartGame() {
     isGameRunning = true;
+	// Reset mouse position to prevent unwanted movement
+	mouseX = undefined;
+	mouseY = undefined;
     score = 0;
     gameTime = 0;
     lastTimeCheck = Date.now();
@@ -2614,8 +2617,7 @@ function update() {
 
     drawStars();
     
-    // Player movement and control
-
+	// Player movement and control
 	if (gameStartSequence && !playerReady) {
 		// Smoothly bring player up from bottom of screen
 		player.y -= 2; // Move player up
@@ -2627,9 +2629,13 @@ function update() {
 		// Check if player reached target position
 		if (player.y <= targetY) {
 			player.y = targetY;
-			gameStartSequence = false; // End the intro sequence
+			// Don't end gameStartSequence here - let it end when playerReady becomes true
 		}
-	} else if (playerReady) {
+	} else if (playerReady && gameStartSequence) {
+		// End the intro sequence when player becomes ready
+		gameStartSequence = false;
+	} else if (playerReady && !gameStartSequence) {
+		// Only apply controls after intro sequence is complete
 		// Touch/mouse follow controls
 		if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
 			// Smoothly interpolate toward touch/mouse position
@@ -2644,7 +2650,6 @@ function update() {
 		player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
 		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
 	}
-
     // Check invulnerability timer
     if (playerInvulnerable) {
         // Only remove invulnerability if player is ready
