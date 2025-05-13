@@ -815,7 +815,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1026,6 +1026,7 @@ function updateAndDrawMainScreenStars() {
     // Continue the animation
     mainScreenStarsAnimationId = requestAnimationFrame(updateAndDrawMainScreenStars);
 }
+
 function startGame() {
     console.log("Start game function called!");
     
@@ -1034,8 +1035,6 @@ function startGame() {
     
     // Initialize game - using try/catch for better error handling
     try {
-		// Add this line:
-		forceHighPerformance();
         // Start the background music
         initializeMusic();
         
@@ -1112,7 +1111,6 @@ function startGame() {
 }
 function restartGame() {
     isGameRunning = true;
-	forceHighPerformance();
     score = 0;
     gameTime = 0;
     lastTimeCheck = Date.now();
@@ -2524,11 +2522,6 @@ function update() {
     const deltaTime = now - lastTimeCheck;
     lastTimeCheck = now;
     gameTime += deltaTime / 1000; // Convert to seconds
-	
-	// Add this performance boost every 5 seconds on mobile
-	if (isMobile && Math.floor(gameTime) % 5 === 0) {
-		forceHighPerformance();
-	}
     
     // Check for boss spawn at 3:30 (210 seconds)
     if (gameTime >= 210 && !bossSpawned) {
