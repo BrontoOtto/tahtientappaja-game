@@ -1135,8 +1135,10 @@ function restartGame() {
 	shieldHealth = 0;
 	powerup = null;
 	powerupSpawned = false;
-	// Reset milestone tracking
-	reachedMilestones = [false, false, false, false]
+	// Reset milestone tracking properly
+	for (let i = 0; i < reachedMilestones.length; i++) {
+		reachedMilestones[i] = false;
+	}
 
     // Remove any existing powerup indicator
     const indicator = document.getElementById('powerupIndicator');
@@ -1715,32 +1717,63 @@ function endGame() {
 		}
 		// Add this function to spawn the powerup
 function spawnPowerup(x, y) {
-    // Determine which powerup to spawn based on rarity
-    let random = Math.random();
-    let powerupType;
+    // Calculate available powerup types based on what player already has
+    let availableTypes = [];
+    let totalChance = 0;
     
-    // Skip dual fire powerups if player already has it
-    if (dualFireActive) {
-        // Adjust the random value to only consider the other two powerup types
-        // Normalize between SHIELD (30%) and RAPID_FIRE (45%)
-        const adjustedShieldChance = POWERUP_TYPES.SHIELD.chance / 
-            (POWERUP_TYPES.SHIELD.chance + POWERUP_TYPES.RAPID_FIRE.chance);
-        
-        if (random < adjustedShieldChance) {
-            powerupType = POWERUP_TYPES.SHIELD.id;
-        } else {
-            powerupType = POWERUP_TYPES.RAPID_FIRE.id;
+    // Only add powerup types that player doesn't already have
+    if (!dualFireActive) {
+        availableTypes.push({
+            type: POWERUP_TYPES.DUAL_FIRE,
+            chance: POWERUP_TYPES.DUAL_FIRE.chance
+        });
+        totalChance += POWERUP_TYPES.DUAL_FIRE.chance;
+    }
+    
+    if (!shieldActive) {
+        availableTypes.push({
+            type: POWERUP_TYPES.SHIELD,
+            chance: POWERUP_TYPES.SHIELD.chance
+        });
+        totalChance += POWERUP_TYPES.SHIELD.chance;
+    }
+    
+    // Rapid Fire can always spawn but reduces chance if already active
+    if (!rapidFireActive) {
+        availableTypes.push({
+            type: POWERUP_TYPES.RAPID_FIRE,
+            chance: POWERUP_TYPES.RAPID_FIRE.chance
+        });
+        totalChance += POWERUP_TYPES.RAPID_FIRE.chance;
+    } else {
+        // If player has rapid fire, make it much less likely to spawn
+        availableTypes.push({
+            type: POWERUP_TYPES.RAPID_FIRE,
+            chance: POWERUP_TYPES.RAPID_FIRE.chance * 0.1 // 10% of normal chance
+        });
+        totalChance += POWERUP_TYPES.RAPID_FIRE.chance * 0.1;
+    }
+    
+    // If no powerups are available (player has everything), don't spawn
+    if (availableTypes.length === 0 || totalChance === 0) {
+        return;
+    }
+    
+    // Randomly select a powerup type based on available chances
+    let random = Math.random() * totalChance;
+    let selectedType = null;
+    
+    for (let i = 0; i < availableTypes.length; i++) {
+        random -= availableTypes[i].chance;
+        if (random <= 0) {
+            selectedType = availableTypes[i].type;
+            break;
         }
     }
-    // Normal distribution when dual fire is not active
-    else {
-        if (random < POWERUP_TYPES.DUAL_FIRE.chance) {
-            powerupType = POWERUP_TYPES.DUAL_FIRE.id;
-        } else if (random < POWERUP_TYPES.DUAL_FIRE.chance + POWERUP_TYPES.SHIELD.chance) {
-            powerupType = POWERUP_TYPES.SHIELD.id;
-        } else {
-            powerupType = POWERUP_TYPES.RAPID_FIRE.id;
-        }
+    
+    // Fallback if no type selected (shouldn't happen)
+    if (!selectedType) {
+        selectedType = availableTypes[0].type;
     }
     
     powerup = {
@@ -1749,7 +1782,7 @@ function spawnPowerup(x, y) {
         width: 30, // Slightly larger
         height: 30, // Slightly larger
         speed: 1.2,
-        type: powerupType,
+        type: selectedType.id,
         spawnTime: Date.now() // Track when it was spawned
     };
     
@@ -1775,7 +1808,8 @@ function updatePowerup() {
             case POWERUP_TYPES.RAPID_FIRE.id:
                 // Always apply rapid fire
                 rapidFireActive = true;
-                rapidFireBulletsLeft = 300;
+                rapidFireBulletsLeft = 100;
+				pointsAwarded = 200;
                 break;
                 
             case POWERUP_TYPES.SHIELD.id:
@@ -1783,10 +1817,10 @@ function updatePowerup() {
                 if (!shieldActive) {
                     shieldActive = true;
                     shieldHealth = 1;
+					pointsAwarded = 200;
                 } else {
                     // Already has shield, give points instead
-                    score += 200;
-                    scoreElement.textContent = score;
+                    pointsAwarded = 200;
                     appliedPowerup = false;
                 }
                 break;
@@ -1794,15 +1828,16 @@ function updatePowerup() {
             case POWERUP_TYPES.DUAL_FIRE.id:
                 // Always apply dual fire (stacks with rapid fire)
                 dualFireActive = true;
+				pointsAwarded = 200;
                 break;
         }
+		
+		// Add points based on what happened
+		score += pointsAwarded;
+		scoreElement.textContent = score;
         
         // Show pickup effect
         createExplosion(powerup.x, powerup.y, 0.5);
-        
-        // Add points for all powerup pickups
-        score += 200;
-        scoreElement.textContent = score;
         
         // Show what powerup was collected
         if (appliedPowerup) {
@@ -2493,13 +2528,15 @@ function update() {
     }
     const powerupMilestones = [500, 1500, 3000, 5000];
     // Check for powerup milestones
-    for (let i = 0; i < powerupMilestones.length; i++) {
-        if (score >= powerupMilestones[i] && !reachedMilestones[i] && !powerup && !rapidFireActive && !dualFireActive) {
-            spawnPowerup(player.x, player.y - 50);
-            reachedMilestones[i] = true;
-            break; // Only spawn one powerup at a time
-        }
-    }
+	for (let i = 0; i < powerupMilestones.length; i++) {
+		if (score >= powerupMilestones[i] && !reachedMilestones[i] && !powerup) {
+			// Spawn at a random position at top of screen
+			const randomX = Math.random() * (canvas.width - 60) + 30;
+			spawnPowerup(randomX, -30);
+			reachedMilestones[i] = true;
+			break; // Only spawn one powerup at a time
+		}
+	}
 
     // Update powerup position and check for collection
     updatePowerup();
