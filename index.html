@@ -843,9 +843,17 @@ function initializeMusic() {
         backgroundMusic = new Audio('tappaja.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
+        backgroundMusic.preload = 'auto'; // Ensure full preload
+        
+        // Set up seamless looping by detecting near-end
+        backgroundMusic.addEventListener('timeupdate', function() {
+            // If we're within 0.1 seconds of the end, restart
+            if (this.duration - this.currentTime < 0.1) {
+                this.currentTime = 0;
+            }
+        });
         
         // Use a user interaction to trigger audio
-        // This takes advantage of the start/restart button click
         const playPromise = backgroundMusic.play();
         
         if (playPromise !== undefined) {
@@ -855,15 +863,13 @@ function initializeMusic() {
             }).catch(e => {
                 console.log("Autoplay prevented, trying again on next user interaction");
                 
-                // Instead of creating a visible button, set up a one-time event listener
-                // on the entire document to play music on the next user interaction
                 const playOnInteraction = function() {
                     backgroundMusic.play()
                     .then(() => {
                         console.log("Audio playing after user interaction");
                         isBackgroundMusicPlaying = true;
                         
-                        // Remove this event listener once it succeeds
+                        // Remove event listeners once it succeeds
                         document.removeEventListener('click', playOnInteraction);
                         document.removeEventListener('touchstart', playOnInteraction);
                     })
@@ -2608,9 +2614,12 @@ function update() {
 		player.y -= 1.5; // Move player up
 		player.x = canvas.width / 2; // Keep centered during intro
 		
+		// Calculate a better target position (lower on screen)
+		const targetY = canvas.height - (player.size * 2); // Two player sizes from bottom
+		
 		// Check if player reached target position
-		if (player.y <= canvas.height - 120) { // Stop 120 pixels from bottom
-			player.y = canvas.height - 120;
+		if (player.y <= targetY) {
+			player.y = targetY;
 			// Leave gameStartSequence true until timer completes
 		}
 	} else if (playerReady) {
@@ -2708,8 +2717,12 @@ function update() {
     if (explosionAnimation) {
         updateExplosion();
     }
-    
-    gameLoop = requestAnimationFrame(update);
+	// Force high performance mode on mobile
+	if (isMobile && navigator.scheduling && navigator.scheduling.isInputPending) {
+		navigator.scheduling.isInputPending({includeContinuous: true});
+	}
+
+	gameLoop = requestAnimationFrame(update);
 }
 
 function updatePlayerAnimation() {
