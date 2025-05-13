@@ -815,7 +815,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1753,21 +1753,14 @@ function spawnPowerup(x, y) {
         totalChance += POWERUP_TYPES.SHIELD.chance;
     }
     
-    // Rapid Fire can always spawn but reduces chance if already active
-    if (!rapidFireActive) {
-        availableTypes.push({
-            type: POWERUP_TYPES.RAPID_FIRE,
-            chance: POWERUP_TYPES.RAPID_FIRE.chance
-        });
-        totalChance += POWERUP_TYPES.RAPID_FIRE.chance;
-    } else {
-        // If player has rapid fire, make it much less likely to spawn
-        availableTypes.push({
-            type: POWERUP_TYPES.RAPID_FIRE,
-            chance: POWERUP_TYPES.RAPID_FIRE.chance * 0.1 // 10% of normal chance
-        });
-        totalChance += POWERUP_TYPES.RAPID_FIRE.chance * 0.1;
-    }
+    // Only add Rapid Fire if player doesn't already have it
+	if (!rapidFireActive) {
+		availableTypes.push({
+			type: POWERUP_TYPES.RAPID_FIRE,
+			chance: POWERUP_TYPES.RAPID_FIRE.chance
+		});
+		totalChance += POWERUP_TYPES.RAPID_FIRE.chance;
+	}
     
     // If no powerups are available (player has everything), don't spawn
     if (availableTypes.length === 0 || totalChance === 0) {
