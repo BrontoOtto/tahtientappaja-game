@@ -21,6 +21,11 @@
         #gameCanvas {
             border: 2px solid #333;
 			touch-action: none;
+			will-change: transform;
+			transform: translateZ(0);
+			-webkit-transform: translateZ(0);
+			backface-visibility: hidden;
+			-webkit-backface-visibility: hidden;
         }
         .screen {
 			position: fixed;
@@ -810,7 +815,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1029,6 +1034,8 @@ function startGame() {
     
     // Initialize game - using try/catch for better error handling
     try {
+		// Add this line:
+		forceHighPerformance();
         // Start the background music
         initializeMusic();
         
@@ -1105,6 +1112,7 @@ function startGame() {
 }
 function restartGame() {
     isGameRunning = true;
+	forceHighPerformance();
     score = 0;
     gameTime = 0;
     lastTimeCheck = Date.now();
@@ -2516,14 +2524,19 @@ function update() {
     const deltaTime = now - lastTimeCheck;
     lastTimeCheck = now;
     gameTime += deltaTime / 1000; // Convert to seconds
+	
+	// Add this performance boost every 5 seconds on mobile
+	if (isMobile && Math.floor(gameTime) % 5 === 0) {
+		forceHighPerformance();
+	}
     
     // Check for boss spawn at 3:30 (210 seconds)
-    if (gameTime >= 189 && !bossSpawned) {
+    if (gameTime >= 210 && !bossSpawned) {
         // Stop enemy spawning 9 seconds before boss appears
         regularEnemiesDisabled = true;
     }
 
-    if (gameTime >= 180 && !bossSpawned) {
+    if (gameTime >= 200 && !bossSpawned) {
         // Clear all existing enemies
         enemies.length = 0;
         enemyBullets.length = 0;
@@ -2609,18 +2622,19 @@ function update() {
     drawStars();
     
     // Player movement and control
+
 	if (gameStartSequence && !playerReady) {
 		// Smoothly bring player up from bottom of screen
-		player.y -= 1.5; // Move player up
+		player.y -= 2; // Move player up
 		player.x = canvas.width / 2; // Keep centered during intro
 		
-		// Calculate a better target position (lower on screen)
-		const targetY = canvas.height - (player.size * 2); // Two player sizes from bottom
+		// Calculate target position - keep player in bottom third of screen
+		const targetY = canvas.height * 0.8; // 80% down the screen
 		
 		// Check if player reached target position
 		if (player.y <= targetY) {
 			player.y = targetY;
-			// Leave gameStartSequence true until timer completes
+			gameStartSequence = false; // End the intro sequence
 		}
 	} else if (playerReady) {
 		// Touch/mouse follow controls
