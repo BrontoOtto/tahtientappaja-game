@@ -1046,8 +1046,8 @@ function startGame() {
         // Always create mobile controls - They'll only be visible on mobile
         createMobileControls();
         
-        // Reset player
-        player.y = canvas.height + 100;
+        // Reset player - start fully below screen
+		player.y = canvas.height + player.size;
 		player.x = canvas.width / 2;
         player.hp = player.maxHp;
         player.bullets = [];
@@ -1108,8 +1108,8 @@ function restartGame() {
     explosionAnimation = null; // Make sure this is here
     
     // Reset player position to match initial game start
-    player.y = canvas.height + 100; // Start below the screen
-    player.x = canvas.width / 2;    // Center horizontally
+	player.y = canvas.height + player.size; // Start fully below the screen
+	player.x = canvas.width / 2;    // Center horizontally
     player.hp = player.maxHp;
     player.bullets = [];
     
@@ -2567,16 +2567,21 @@ function update() {
     drawStars();
     
     // Player movement and control
-    if (gameStartSequence && !playerReady) {
-        // Smoothly bring player up from bottom of screen
-        player.y -= 0.5;
-        player.x = canvas.width / 2; // Keep centered during intro
-        
-        // Check if player reached target position
-        if (player.y <= canvas.height * 0.6) { // 60% from top (higher position)
-            player.y = canvas.height * 0.6;
-            // Leave gameStartSequence true until timer completes
-        }
+	if (gameStartSequence && !playerReady) {
+		// Smoothly bring player up from bottom of screen
+		player.y -= 0.8; // Slightly faster movement
+		player.x = canvas.width / 2; // Keep centered during intro
+		
+		// Calculate target position based on canvas size
+		// Keep player in the lower third of the screen but fully visible
+		const targetY = canvas.height - (player.size * 1.5) - 50; // 50px margin from bottom
+		
+		// Check if player reached target position
+		if (player.y <= targetY) {
+			player.y = targetY;
+			// Leave gameStartSequence true until timer completes
+		}
+	}
     } else if (playerReady) {
         // Touch/mouse follow controls
         if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
