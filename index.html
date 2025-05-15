@@ -776,6 +776,17 @@ document.addEventListener('keyup', (e) => {
     keys[e.code] = false;
 });
 
+// Handle page visibility to prevent throttling
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+        console.log("Page visible - resuming full performance");
+        if (backgroundMusic && backgroundMusic.paused && isBackgroundMusicPlaying) {
+            backgroundMusic.play();
+        }
+        lastTimeCheck = Date.now(); // Reset the time check to prevent time jump
+    }
+});
+
 
         let lastGroupSpawn = 0;
         const groupSpawnDelay = 15000; // Spawn group every 15 seconds
@@ -815,7 +826,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -845,47 +856,62 @@ function initializeMusic() {
     
     // For all devices - unified approach
     if (!backgroundMusic) {
+        // Create audio element
         backgroundMusic = new Audio('tappaja.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
         backgroundMusic.preload = 'auto'; // Ensure full preload
         
-        // Set up seamless looping by detecting near-end
-        backgroundMusic.addEventListener('timeupdate', function() {
-            // If we're within 0.1 seconds of the end, restart
-            if (this.duration - this.currentTime < 0.1) {
-                this.currentTime = 0;
+        // Force start
+        const startAudio = function() {
+            const playPromise = backgroundMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log("Audio playing successfully");
+                    isBackgroundMusicPlaying = true;
+                    
+                    // Remove event listeners once it succeeds
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                    document.removeEventListener('click', startAudio);
+                    document.removeEventListener('touchstart', startAudio);
+                    
+                    // Set up seamless looping by detecting near-end
+                    backgroundMusic.addEventListener('timeupdate', function() {
+                        // If we're within 0.1 seconds of the end, restart
+                        if (this.duration - this.currentTime < 0.1) {
+                            this.currentTime = 0;
+                        }
+                    });
+                    
+                }).catch(e => {
+                    console.log("Audio start failed, trying again:", e);
+                    
+                    // Create a short silent audio and play it
+                    const silentAudio = document.createElement('audio');
+                    silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADmADw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAAADZhdnETdAAAAAAAAAAAAAAAAAAAA';
+                    silentAudio.play().then(() => {
+                        // Try playing the main audio again
+                        setTimeout(() => backgroundMusic.play(), 100);
+                    });
+                });
             }
-        });
+        };
         
-        // Use a user interaction to trigger audio
-        const playPromise = backgroundMusic.play();
+        // Handle visibility changes to restart audio if page was in background
+        const handleVisibilityChange = function() {
+            if (document.visibilityState === 'visible') {
+                if (backgroundMusic && backgroundMusic.paused) {
+                    startAudio();
+                }
+            }
+        };
         
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log("Audio playing successfully");
-                isBackgroundMusicPlaying = true;
-            }).catch(e => {
-                console.log("Autoplay prevented, trying again on next user interaction");
-                
-                const playOnInteraction = function() {
-                    backgroundMusic.play()
-                    .then(() => {
-                        console.log("Audio playing after user interaction");
-                        isBackgroundMusicPlaying = true;
-                        
-                        // Remove event listeners once it succeeds
-                        document.removeEventListener('click', playOnInteraction);
-                        document.removeEventListener('touchstart', playOnInteraction);
-                    })
-                    .catch(e => console.log("Still couldn't play audio:", e));
-                };
-                
-                // Add event listeners for both click and touch
-                document.addEventListener('click', playOnInteraction, {once: true});
-                document.addEventListener('touchstart', playOnInteraction, {once: true});
-            });
-        }
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        document.addEventListener('click', startAudio, {once: false});
+        document.addEventListener('touchstart', startAudio, {once: false});
+        
+        // Try to start immediately
+        startAudio();
     } else if (backgroundMusic.paused) {
         backgroundMusic.play()
         .then(() => isBackgroundMusicPlaying = true)
@@ -1029,14 +1055,17 @@ function updateAndDrawMainScreenStars() {
 
 function startGame() {
     console.log("Start game function called!");
+	
+	// Start the background music immediately
+    initializeMusic();
     
     // Switch to game screen
     switchScreen("game");
     
     // Initialize game - using try/catch for better error handling
     try {
-        // Start the background music
-        initializeMusic();
+        // Add this line:
+        forceHighPerformance();
         
         // Reset game state
         score = 0;
@@ -2727,6 +2756,26 @@ function update() {
 	// Force high performance mode on mobile
 	if (isMobile && navigator.scheduling && navigator.scheduling.isInputPending) {
 		navigator.scheduling.isInputPending({includeContinuous: true});
+	}
+	// Force consistent performance
+	if (isMobile) {
+		// Prevent throttling by keeping the CPU active
+		if (typeof window.performance !== "undefined" && typeof window.performance.now === "function") {
+			window.performance.now();
+		}
+		
+		// Force layout recalculation
+		canvas.style.transform = "translateZ(0)";
+		
+		// Create user interaction simulation periodically
+		if (gameTime % 3 < 0.016) { // Every ~3 seconds
+			const evt = new TouchEvent("touchstart", {
+				bubbles: true,
+				cancelable: true,
+				view: window
+			});
+			canvas.dispatchEvent(evt);
+		}
 	}
 
 	gameLoop = requestAnimationFrame(update);
