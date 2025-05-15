@@ -826,7 +826,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -856,62 +856,39 @@ function initializeMusic() {
     
     // For all devices - unified approach
     if (!backgroundMusic) {
-        // Create audio element
         backgroundMusic = new Audio('tappaja.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
-        backgroundMusic.preload = 'auto'; // Ensure full preload
         
-        // Force start
-        const startAudio = function() {
-            const playPromise = backgroundMusic.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    console.log("Audio playing successfully");
-                    isBackgroundMusicPlaying = true;
-                    
-                    // Remove event listeners once it succeeds
-                    document.removeEventListener('visibilitychange', handleVisibilityChange);
-                    document.removeEventListener('click', startAudio);
-                    document.removeEventListener('touchstart', startAudio);
-                    
-                    // Set up seamless looping by detecting near-end
-                    backgroundMusic.addEventListener('timeupdate', function() {
-                        // If we're within 0.1 seconds of the end, restart
-                        if (this.duration - this.currentTime < 0.1) {
-                            this.currentTime = 0;
-                        }
-                    });
-                    
-                }).catch(e => {
-                    console.log("Audio start failed, trying again:", e);
-                    
-                    // Create a short silent audio and play it
-                    const silentAudio = document.createElement('audio');
-                    silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADmADw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw8PDw//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjU0AAAAAAAAAAAAAAAAJAAAAAAAAAAADZhdnETdAAAAAAAAAAAAAAAAAAAA';
-                    silentAudio.play().then(() => {
-                        // Try playing the main audio again
-                        setTimeout(() => backgroundMusic.play(), 100);
-                    });
-                });
-            }
-        };
+        // Try to play immediately
+        const playPromise = backgroundMusic.play();
         
-        // Handle visibility changes to restart audio if page was in background
-        const handleVisibilityChange = function() {
-            if (document.visibilityState === 'visible') {
-                if (backgroundMusic && backgroundMusic.paused) {
-                    startAudio();
-                }
-            }
-        };
-        
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        document.addEventListener('click', startAudio, {once: false});
-        document.addEventListener('touchstart', startAudio, {once: false});
-        
-        // Try to start immediately
-        startAudio();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log("Audio playing successfully");
+                isBackgroundMusicPlaying = true;
+            }).catch(e => {
+                console.log("Autoplay prevented, trying again on next user interaction");
+                
+                // Set up a one-time event listener for user interaction
+                const playOnInteraction = function() {
+                    backgroundMusic.play()
+                    .then(() => {
+                        console.log("Audio playing after user interaction");
+                        isBackgroundMusicPlaying = true;
+                        
+                        // Remove event listeners once it succeeds
+                        document.removeEventListener('click', playOnInteraction);
+                        document.removeEventListener('touchstart', playOnInteraction);
+                    })
+                    .catch(e => console.log("Still couldn't play audio:", e));
+                };
+                
+                // Add event listeners for both click and touch
+                document.addEventListener('click', playOnInteraction, {once: true});
+                document.addEventListener('touchstart', playOnInteraction, {once: true});
+            });
+        }
     } else if (backgroundMusic.paused) {
         backgroundMusic.play()
         .then(() => isBackgroundMusicPlaying = true)
@@ -1052,7 +1029,12 @@ function updateAndDrawMainScreenStars() {
     // Continue the animation
     mainScreenStarsAnimationId = requestAnimationFrame(updateAndDrawMainScreenStars);
 }
-
+// Simple performance boost for mobile
+function forceHighPerformance() {
+    // Just a simple no-op function to avoid errors
+    console.log("Forcing high performance mode");
+    return;
+}
 function startGame() {
     console.log("Start game function called!");
 	
@@ -2757,25 +2739,9 @@ function update() {
 	if (isMobile && navigator.scheduling && navigator.scheduling.isInputPending) {
 		navigator.scheduling.isInputPending({includeContinuous: true});
 	}
-	// Force consistent performance
-	if (isMobile) {
-		// Prevent throttling by keeping the CPU active
-		if (typeof window.performance !== "undefined" && typeof window.performance.now === "function") {
-			window.performance.now();
-		}
-		
-		// Force layout recalculation
-		canvas.style.transform = "translateZ(0)";
-		
-		// Create user interaction simulation periodically
-		if (gameTime % 3 < 0.016) { // Every ~3 seconds
-			const evt = new TouchEvent("touchstart", {
-				bubbles: true,
-				cancelable: true,
-				view: window
-			});
-			canvas.dispatchEvent(evt);
-		}
+	// Force high performance mode on mobile
+	if (isMobile && navigator.scheduling && navigator.scheduling.isInputPending) {
+		navigator.scheduling.isInputPending({includeContinuous: true});
 	}
 
 	gameLoop = requestAnimationFrame(update);
