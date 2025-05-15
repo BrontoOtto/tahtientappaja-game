@@ -815,7 +815,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1732,6 +1732,8 @@ function endGame() {
 		}
 		// Add this function to spawn the powerup
 function spawnPowerup(x, y) {
+    // Don't spawn if another powerup already exists
+    if (powerup) return;
     // Calculate available powerup types based on what player already has
     let availableTypes = [];
     let totalChance = 0;
@@ -2082,8 +2084,8 @@ function updateBullets() {
 					scoreElement.textContent = score;
 					
 					// Chance to spawn a powerup ONLY when defeating an enemy with bullets
-					// (not by collision with player)
-					if (Math.random() < POWERUP_SPAWN_RATE) {
+					// (not by collision with player) AND no other powerup is on screen
+					if (!powerup && Math.random() < POWERUP_SPAWN_RATE) {
 						spawnPowerup(enemy.x, enemy.y);
 					}
 					
@@ -2535,7 +2537,7 @@ function update() {
         spawnBoss();
     }
     const powerupMilestones = [500, 1500, 3000, 5000];
-    // Check for powerup milestones
+    // Check for powerup milestones but only spawn if no powerup is currently active
 	for (let i = 0; i < powerupMilestones.length; i++) {
 		if (score >= powerupMilestones[i] && !reachedMilestones[i] && !powerup) {
 			// Spawn at a random position at top of screen
