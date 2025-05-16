@@ -855,7 +855,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1236,7 +1236,7 @@ function restartGame() {
 				width: 75,
 				height: 75,
 				hp: 220,
-				maxHp: 200,
+				maxHp: 300,
 				lastShot: 0,
 				shootingDelay: 1000, // 1 second
 				moveDirection: 1,    // 1 for right, -1 for left
@@ -1280,7 +1280,7 @@ function restartGame() {
 						width: 25, // Larger to match the new image
 						height: 25, // Larger to match the new image
 						hp: 4,
-						speed: 0.7,
+						speed: 1.3,
 						isMissile: true,
 						points: 20,
 						// Animation properties
