@@ -9,15 +9,18 @@
 	<meta name="mobile-web-app-capable" content="yes">
     <style>
         body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: black;
-            font-family: Arial, sans-serif;
-            
-        }
+			margin: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			background: black;
+			font-family: Arial, sans-serif;
+			position: fixed; /* Prevent scrolling */
+			overflow: hidden; /* Prevent scrolling */
+			width: 100%; /* Ensure full width */
+			touch-action: none; /* Disable browser touch actions */
+		}
         #gameCanvas {
             border: 2px solid #333;
 			touch-action: none;
@@ -633,6 +636,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (detectMobile()) {
         lockScreenOrientation();
     }
+	
+	// Prevent page scrolling on mobile
+    document.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchstart', function(e) {
+        if (e.target === canvas) {
+            e.preventDefault();
+        }
+    }, { passive: false });
     
     // Initialize image objects
     window.enemyImage = new Image();
@@ -841,7 +855,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('TESTI7', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
