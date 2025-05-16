@@ -55,15 +55,7 @@
 	
 	/* Add responsive sizing classes */
 	.responsive-container {
-	    width: 100%;
-	    max-width: 400px;
-	    margin: 0 auto;
-	    display: flex;
-	    flex-direction: column;
-	    justify-content: center;
-	    align-items: center;
-	    /* Add space between elements */
-	    gap: 10px; 
+	     display: block !important; /* Force block display instead of flex */
 	}
 	
 	.screen img, .screen canvas {
@@ -206,6 +198,15 @@
 		    #socialLinks, #socialLinks2 {
 		        gap: 15px;
 		    }
+		}
+	   	 /* Add these new rules for button fixing */
+		#startButtonCanvas, #restartButtonCanvas {
+		    display: block !important; /* Force block display for button canvases */
+		    margin: 0 auto; /* Center the buttons */
+		}
+		
+		.button-container {
+		    display: block !important;
 		}
     </style>
 </head>
@@ -582,9 +583,9 @@ function switchScreen(newScreen) {
 	    mainScreenStarsAnimationId = requestAnimationFrame(updateAndDrawMainScreenStars);
 	    
 	    // Then show the UI
-	    if (startScreen) {
-	        startScreen.style.display = 'flex'; // Changed from 'block' to 'flex'
-	    }
+		if (startScreen) {
+		    startScreen.style.display = 'block'; // Use block display mode for compatibility
+		}
 	    
 	    // Start main character animation
 	    mainCharacterAnimFrame = 0;
@@ -1666,6 +1667,7 @@ function updateStartButton() {
         if (startButtonAnimating) {
             const elapsed = Date.now() - startButtonTimer;
             const progress = Math.min(elapsed / startButtonAnimationDuration, 1);
+		console.log("Button animation progress:", progress.toFixed(2), "Frame:", startButtonFrame, "Elapsed:", elapsed);
             
             // Map progress (0-1) to frames (1-16)
             // Calculate which frame to show (frames 1-16 represent progress)
@@ -1680,6 +1682,13 @@ function updateStartButton() {
             // If animation completed, start the game
             if (progress >= 1) {
                 console.log("Button animation complete, starting game");
+		    // Add this debug line RIGHT HERE
+	                console.log("About to call startGame(), animation state:", {
+	                    startButtonAnimating, 
+	                    startButtonFrame, 
+	                    currentScreen,
+	                    isGameRunning
+	                });
                 startButtonAnimating = false;
                 startGame();
                 return;
