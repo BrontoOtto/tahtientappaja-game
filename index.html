@@ -95,9 +95,9 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     
-	<div id="gameStats" style="display:none; visibility:hidden; opacity:0; position:absolute; left:-9999px;">
-		<div>Score: <span id="score">0</span></div>
-		<div>HP: <span id="hp">100</span></div>
+	<div id="gameStats" style="display:none;">
+	    <div>Score: <span id="score">0</span></div>
+	    <div>HP: <span id="hp">100</span></div>
 	</div>
 
 	<div id="startScreen" class="screen">
@@ -455,8 +455,11 @@ function switchScreen(newScreen) {
         isGameRunning = true;
         
         if (gameStats) {
-            gameStats.style.display = 'block';
-        }
+	    gameStats.style.display = 'block';
+	    gameStats.style.visibility = 'visible';
+	    gameStats.style.opacity = '1';
+	    gameStats.style.position = 'static';
+	}
     } 
     else if (newScreen === "gameOver") {
 		isLoading = false;
@@ -1131,9 +1134,23 @@ function startGame() {
 		powerup = null;
 		powerupSpawned = false;
         
-        // Update UI
-        scoreElement.textContent = score;
-        hpElement.textContent = player.hp;
+        // Ensure UI elements are updated each frame
+	if (gameStats.style.display === 'none' || gameStats.style.visibility === 'hidden') {
+	    // Force show if hidden
+	    gameStats.style.display = 'block';
+	    gameStats.style.visibility = 'visible';
+	    gameStats.style.opacity = '1';
+	    gameStats.style.position = 'static';
+	}
+	// Update score and HP text (redundant but ensures they're always in sync)
+	scoreElement.textContent = score;
+	hpElement.textContent = player.hp;
+	
+	// Ensure stats are visible
+	gameStats.style.display = 'block';
+	gameStats.style.visibility = 'visible';
+	gameStats.style.opacity = '1';
+	gameStats.style.position = 'static';
         
         // Enable player control and enemy spawning after delay
         setTimeout(() => {
@@ -2632,41 +2649,46 @@ function update() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Add UI elements - always visible regardless of screen size
-	// UI Background - make it slightly taller for better visibility
-	const statusBarHeight = Math.max(50, Math.min(canvas.height * 0.08, 70));
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Make background more opaque
+    // UI Background - make it slightly taller for better visibility
+	const statusBarHeight = Math.max(60, Math.min(canvas.height * 0.1, 80));
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.9)'; // Make background more opaque
 	ctx.fillRect(0, 0, canvas.width, statusBarHeight);
-
+	
+	// Add border to UI area for better visibility
+	ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+	ctx.lineWidth = 2;
+	ctx.strokeRect(0, 0, canvas.width, statusBarHeight);
+	
 	// Score display - positioned to the left
 	ctx.fillStyle = '#4CAF50';
-	const fontSize = Math.max(16, statusBarHeight * 0.4); // Adjust font size
+	const fontSize = Math.max(18, statusBarHeight * 0.4); // Increase minimum font size
 	ctx.font = `bold ${fontSize}px Arial`;
 	ctx.textAlign = 'left';
-	ctx.fillText(`Score: ${score}`, 20, statusBarHeight * 0.65);
-
-	// HP text and bar - positioned to the right
-	ctx.fillStyle = '#FFFFFF';
-	ctx.font = `bold ${Math.max(14, statusBarHeight * 0.3)}px Arial`;
-	ctx.textAlign = 'right';
-
+	ctx.fillText(`Score: ${score}`, 15, statusBarHeight * 0.65);
+	
 	// HP bar - positioned to the right
-	const hpBarWidth = Math.min(canvas.width * 0.25, 120);
+	const hpBarWidth = Math.min(canvas.width * 0.35, 150); // Wider bar
 	const hpBarHeight = statusBarHeight * 0.4;
 	const hpPercent = player.hp / player.maxHp;
-
-	// HP Bar background
+	
+	// HP label
+	ctx.fillStyle = '#FFFFFF';
+	ctx.font = `bold ${Math.max(16, statusBarHeight * 0.3)}px Arial`; // Bigger font
+	ctx.textAlign = 'right';
+	ctx.fillText(`HP:`, canvas.width - hpBarWidth - 20, statusBarHeight * 0.65);
+	
+	// HP Bar background with padding
 	ctx.fillStyle = '#333';
-	ctx.fillRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
-
+	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.4, hpBarWidth, hpBarHeight);
+	
 	// HP Bar fill with color based on percentage
 	ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
-	ctx.fillRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth * hpPercent, hpBarHeight);
-
-	// Optional: Add border to HP bar for better visibility
+	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.4, hpBarWidth * hpPercent, hpBarHeight);
+	
+	// Add border to HP bar for better visibility
 	ctx.strokeStyle = '#FFFFFF';
-	ctx.lineWidth = 1;
-	ctx.strokeRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
+	ctx.lineWidth = 2;
+	ctx.strokeRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.4, hpBarWidth, hpBarHeight);
 
     // UI separators
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
