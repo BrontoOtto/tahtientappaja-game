@@ -214,25 +214,38 @@ function assetLoaded() {
         canvas.height = 800;
 		
 		function resizeCanvas() {
-			// Get the dimensions of the viewport
-			const viewportWidth = window.innerWidth;
-			const viewportHeight = window.innerHeight;
-			
-			// Set canvas size to fit screen while maintaining aspect ratio
-			if (viewportWidth / viewportHeight > 1) {
-				// Landscape orientation
-				canvas.height = Math.min(viewportHeight * 0.95, 800);
-				canvas.width = canvas.height / 2; // Maintain your 1:2 aspect ratio
-			} else {
-				// Portrait orientation (most phones)
-				canvas.width = Math.min(viewportWidth * 0.95, 400);
-				canvas.height = canvas.width * 2; // Maintain your 1:2 aspect ratio
-			}
-			
-			// Recreate mobile controls with new canvas dimensions
-			if (isMobile) {
-				createMobileControls();
-			}
+		    // Get the dimensions of the viewport
+		    const viewportWidth = window.innerWidth;
+		    const viewportHeight = window.innerHeight;
+		    
+		    // Set canvas size to fit screen while maintaining aspect ratio
+		    if (viewportWidth / viewportHeight > 1) {
+		        // Landscape orientation
+		        canvas.height = Math.min(viewportHeight * 0.95, 800);
+		        canvas.width = canvas.height / 2; // Maintain your 1:2 aspect ratio
+		    } else {
+		        // Portrait orientation (most phones)
+		        canvas.width = Math.min(viewportWidth * 0.95, 400);
+		        canvas.height = canvas.width * 2; // Maintain your 1:2 aspect ratio
+		    }
+		    
+		    // Add specific check for very small screens (like iPhone SE)
+		    const isSmallScreen = viewportWidth < 375 || viewportHeight < 667;
+		    if (isSmallScreen) {
+		        // For very small screens, ensure minimum dimensions 
+		        canvas.width = Math.max(canvas.width, viewportWidth * 0.98);
+		    }
+		    
+		    // Recreate mobile controls with new canvas dimensions
+		    if (isMobile) {
+		        createMobileControls();
+		    }
+		    
+		    // If game is running, make sure UI is updated with new dimensions
+		    if (isGameRunning && scoreElement && hpElement) {
+		        scoreElement.textContent = score;
+		        hpElement.textContent = player.hp;
+		    }
 		}
 		
         // Game state global variables
@@ -2649,46 +2662,43 @@ function update() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // UI Background - make it slightly taller for better visibility
-	const statusBarHeight = Math.max(60, Math.min(canvas.height * 0.1, 80));
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.9)'; // Make background more opaque
+    // UI Background - make it consistently present regardless of screen size
+	const minHeight = Math.min(canvas.height * 0.06, 45); // Minimum height for very small screens
+	const statusBarHeight = Math.max(minHeight, Math.min(canvas.height * 0.08, 60));
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
 	ctx.fillRect(0, 0, canvas.width, statusBarHeight);
 	
-	// Add border to UI area for better visibility
-	ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-	ctx.lineWidth = 2;
-	ctx.strokeRect(0, 0, canvas.width, statusBarHeight);
-	
-	// Score display - positioned to the left
+	// Score display - positioned to the left with minimum size guaranteed
 	ctx.fillStyle = '#4CAF50';
-	const fontSize = Math.max(18, statusBarHeight * 0.4); // Increase minimum font size
+	const minFontSize = Math.min(canvas.width * 0.04, 16); // Responsive but with minimum size
+	const fontSize = Math.max(minFontSize, statusBarHeight * 0.4);
 	ctx.font = `bold ${fontSize}px Arial`;
 	ctx.textAlign = 'left';
-	ctx.fillText(`Score: ${score}`, 15, statusBarHeight * 0.65);
+	ctx.fillText(`Score: ${score}`, 10, statusBarHeight * 0.65);
 	
-	// HP bar - positioned to the right
-	const hpBarWidth = Math.min(canvas.width * 0.35, 150); // Wider bar
+	// HP bar - positioned to the right with responsive width
+	const hpBarWidth = Math.min(canvas.width * 0.25, 100);
 	const hpBarHeight = statusBarHeight * 0.4;
 	const hpPercent = player.hp / player.maxHp;
 	
-	// HP label
+	// HP text label - make sure it's visible but not too large
 	ctx.fillStyle = '#FFFFFF';
-	ctx.font = `bold ${Math.max(16, statusBarHeight * 0.3)}px Arial`; // Bigger font
+	ctx.font = `bold ${Math.max(minFontSize * 0.8, statusBarHeight * 0.3)}px Arial`;
 	ctx.textAlign = 'right';
 	ctx.fillText(`HP:`, canvas.width - hpBarWidth - 20, statusBarHeight * 0.65);
 	
-	// HP Bar background with padding
+	// HP Bar background
 	ctx.fillStyle = '#333';
-	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.4, hpBarWidth, hpBarHeight);
+	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
 	
 	// HP Bar fill with color based on percentage
 	ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
-	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.4, hpBarWidth * hpPercent, hpBarHeight);
+	ctx.fillRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.35, hpBarWidth * hpPercent, hpBarHeight);
 	
-	// Add border to HP bar for better visibility
+	// HP bar border
 	ctx.strokeStyle = '#FFFFFF';
-	ctx.lineWidth = 2;
-	ctx.strokeRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.4, hpBarWidth, hpBarHeight);
+	ctx.lineWidth = 1;
+	ctx.strokeRect(canvas.width - hpBarWidth - 10, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
 
     // UI separators
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
