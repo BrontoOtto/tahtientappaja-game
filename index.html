@@ -1013,7 +1013,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1384,13 +1384,17 @@ function restartGame() {
 		// Add this function to spawn the boss
 		function spawnBoss() {
 			bossSpawned = true;
-			regularEnemiesDisabled = true;
+			// regularEnemiesDisabled is now set earlier, we don't need to set it here
 			lastBossMissile = Date.now();
 			bossAnimationFrame = 0;  // Reset animation frame
 			bossAnimationTimer = Date.now();  // Reset animation timer
+			
+			// Optional: Play a warning sound or add an on-screen warning
+			// You could add a visual "Warning: Boss Approaching" message here
+			
 			boss = {
 				x: canvas.width / 2,
-				y: -100, // Start off-screen at top
+				y: -150, // Start higher off-screen for more dramatic entrance
 				width: 75,
 				height: 75,
 				hp: 300,
@@ -1403,7 +1407,10 @@ function restartGame() {
 				patternTimer: 0,     // For switching patterns
 				patternDuration: 5000, // Switch pattern every 5 seconds
 				entrySequence: true, // Flag for entry animation
-				targetY: 100 // Target position for entry animation
+				targetY: 100, // Target position for entry animation
+				entrySpeed: 0.5, // Slower entry speed
+				invulnerable: true, // Make boss invulnerable during entry
+				flashEffect: 0 // For visual invulnerability effect
 			};
 		}
 
@@ -1478,22 +1485,33 @@ function restartGame() {
 			
 			// Handle entry sequence first
 			if (boss.entrySequence) {
-				// Move boss down smoothly
-				boss.y += 2; // Move boss down at same speed as player entry
+				// Move boss down smoothly at slower speed
+				boss.y += boss.entrySpeed;
 				
 				// Keep boss centered during entry
 				boss.x = canvas.width / 2;
+				
+				// Update flash effect for invulnerability visualization
+				boss.flashEffect = (boss.flashEffect + 0.1) % (Math.PI * 2);
 				
 				// Check if boss reached target position
 				if (boss.y >= boss.targetY) {
 					boss.y = boss.targetY;
 					boss.entrySequence = false; // End entry sequence
 					boss.patternTimer = now; // Start pattern timer now
+					
+					// Keep invulnerable for 2 more seconds after reaching position
+					setTimeout(() => {
+						if (boss) {
+							boss.invulnerable = false;
+						}
+					}, 2000);
 				}
 				
 				// Don't do normal movement or shooting during entry
 				return;
 			}
+			
 			
 			// Normal boss behavior after entry sequence
 			// Check if it's time to switch patterns
@@ -1570,6 +1588,19 @@ function restartGame() {
 				bossAnimationTimer = now;
 			}
 			
+			// Add visual effects for entry and invulnerability
+			if (boss.invulnerable) {
+				// Save context for effects
+				ctx.save();
+				
+				// Pulsing transparency effect for invulnerability
+				ctx.globalAlpha = 0.6 + Math.sin(boss.flashEffect) * 0.3;
+				
+				// Optional: Add a glow effect for invulnerability
+				ctx.shadowColor = "rgba(255, 255, 150, 0.8)";
+				ctx.shadowBlur = 15 + Math.sin(boss.flashEffect * 2) * 5;
+			}
+			
 			// Draw boss with animation
 			if (window.bossImage.complete) {
 				// Calculate the source y position based on current frame
@@ -1601,6 +1632,11 @@ function restartGame() {
 				ctx.beginPath();
 				ctx.arc(boss.x, boss.y + 10, 20, 0, Math.PI);
 				ctx.stroke();
+			}
+			
+			// Restore context if invulnerable effects were applied
+			if (boss.invulnerable) {
+				ctx.restore();
 			}
 			
 			// Draw boss HP bar
@@ -2260,35 +2296,39 @@ function updateBullets() {
         }
         
         // Check for boss hit
-        if (boss && checkCollision(bullet, {
-            x: boss.x - boss.width/2,
-            y: boss.y - boss.height/2,
-            width: boss.width,
-            height: boss.height
-        })) {
-            boss.hp--;
-			// Create a small explosion where the bullet hit
+		if (boss && checkCollision(bullet, {
+			x: boss.x - boss.width/2,
+			y: boss.y - boss.height/2,
+			width: boss.width,
+			height: boss.height
+		})) {
+			// Create a small explosion where the bullet hit regardless of invulnerability
 			createExplosion(bullet.x, bullet.y, 0.4);
-            player.bullets.splice(i, 1);
-            
-            // Boss death
-            if (boss.hp <= 0) {
-                // Start explosion animation instead of instant damage
-                explosionAnimation = {
-                    centerX: boss.x,
-                    centerY: boss.y,
-                    radius: 10,
-                    startTime: Date.now(),
-                    duration: 5000, // 5 seconds
-                    completed: false
-                };
-                
-                boss = null;
-                score += 1000; // Big points for defeating boss
-                continue;
-            }
-            continue;
-        }
+			player.bullets.splice(i, 1);
+			
+			// Only damage the boss if not invulnerable
+			if (!boss.invulnerable) {
+				boss.hp--;
+				
+				// Boss death
+				if (boss.hp <= 0) {
+					// Start explosion animation instead of instant damage
+					explosionAnimation = {
+						centerX: boss.x,
+						centerY: boss.y,
+						radius: 10,
+						startTime: Date.now(),
+						duration: 5000, // 5 seconds
+						completed: false
+					};
+					
+					boss = null;
+					score += 1000; // Big points for defeating boss
+					continue;
+				}
+			}
+			continue;
+}
         
         // Regular enemy hit check
         // Regular enemy hit check
@@ -2784,21 +2824,18 @@ function update() {
 		}
 	}
     
-    // Check for boss spawn at 3:30 (210 seconds)
-    if (gameTime >= 210 && !bossSpawned) {
-        // Stop enemy spawning 9 seconds before boss appears
-        regularEnemiesDisabled = true;
-    }
+    // Stop spawning regular enemies at 190 seconds (20 seconds before boss)
+	if (gameTime >= 190 && !regularEnemiesDisabled) {
+		regularEnemiesDisabled = true;
+		console.log("Regular enemies disabled at time: " + gameTime);
+	}
 
-    if (gameTime >= 200 && !bossSpawned) {
-        // Clear all existing enemies
-        enemies.length = 0;
-        enemyBullets.length = 0;
-        circularGroup = null;
-        
-        // Spawn boss
-        spawnBoss();
-    }
+	// Spawn boss at 210 seconds, without clearing existing enemies
+	if (gameTime >= 210 && !bossSpawned) {
+		// Spawn boss without clearing enemies
+		spawnBoss();
+		console.log("Boss spawned at time: " + gameTime);
+	}
     const powerupMilestones = [500, 1500, 3000, 5000];
     // Check for powerup milestones but only spawn if no powerup is currently active
 	for (let i = 0; i < powerupMilestones.length; i++) {
