@@ -7,7 +7,6 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         body {
 			margin: 0;
@@ -596,13 +595,13 @@ function switchScreen(newScreen) {
 	    updateStartButton();
 	}
     else if (newScreen === "game") {
-        isLoading = false;
-        isGameRunning = true;
-        
-        if (gameStats) {
-            gameStats.style.display = 'block';
-        }
-    } 
+	    isLoading = false;
+	    isGameRunning = true;
+	    
+	    if (gameStats) {
+	        gameStats.style.display = 'block';
+	    }
+	}
     else if (newScreen === "gameOver") {
 	    isLoading = false;
 	    isGameRunning = false;
@@ -3364,21 +3363,10 @@ if (document.readyState === "complete" || document.readyState === "interactive")
 			ctx.fillText(`Game Time: ${Math.floor(gameTime)}s`, 10, canvas.height - 15);
 		}
 
-        // Add special debug info for small screens
-        if (/iPhone|iPod/.test(navigator.userAgent) && (window.innerWidth <= 320 || window.innerHeight <= 568)) {
-            console.log("iPhone SE detected - applying special handling");
-            console.log("Screen dimensions:", window.innerWidth, "x", window.innerHeight);
-            
-            // Force redraw of canvas on next frame
-            setTimeout(function() {
-                resizeCanvas();
-                if (isGameRunning) {
-                    // Force redraw of game UI
-                    scoreElement.textContent = score;
-                    hpElement.textContent = player.hp;
-                }
-            }, 100);
-        }
+       // Simple iPhone SE detection to force UI update
+	if (/iPhone|iPod/.test(navigator.userAgent) && window.innerWidth <= 320) {
+	    console.log("Small iPhone detected - UI scaled for better visibility");
+	}
     </script>
     </script>
 </body>
