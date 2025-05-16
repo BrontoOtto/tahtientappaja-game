@@ -2632,46 +2632,53 @@ function update() {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Add UI elements - always visible regardless of screen size
-	// UI Background - make it slightly taller for better visibility
-	const statusBarHeight = Math.max(50, Math.min(canvas.height * 0.08, 70));
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Make background more opaque
+    // ===== SIMPLE, ROBUST UI RENDERING =====
+	// Fixed-height status bar that works on all devices
+	const statusBarHeight = 40; // Fixed height in pixels
+	const margin = 10; // Consistent margin
+	
+	// Black semi-transparent background
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
 	ctx.fillRect(0, 0, canvas.width, statusBarHeight);
-
-	// Score display - positioned to the left
-	ctx.fillStyle = '#4CAF50';
-	const fontSize = Math.max(16, statusBarHeight * 0.4); // Adjust font size
-	ctx.font = `bold ${fontSize}px Arial`;
+	
+	// Draw thin divider line under status bar
+	ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+	ctx.fillRect(0, statusBarHeight, canvas.width, 1);
+	
+	// Score text - left side
+	ctx.fillStyle = '#4CAF50'; // Green
+	ctx.font = '16px Arial';
 	ctx.textAlign = 'left';
-	ctx.fillText(`Score: ${score}`, 20, statusBarHeight * 0.65);
-
-	// HP text and bar - positioned to the right
-	ctx.fillStyle = '#FFFFFF';
-	ctx.font = `bold ${Math.max(14, statusBarHeight * 0.3)}px Arial`;
-	ctx.textAlign = 'right';
-
-	// HP bar - positioned to the right
-	const hpBarWidth = Math.min(canvas.width * 0.25, 120);
-	const hpBarHeight = statusBarHeight * 0.4;
+	ctx.textBaseline = 'middle'; // Important - centers text vertically
+	ctx.fillText(`Score: ${score}`, margin, statusBarHeight/2);
+	
+	// HP bar - right side with fixed dimensions
+	const hpBarWidth = Math.min(canvas.width * 0.3, 80); // Responsive but with max size
+	const hpBarHeight = 16;
 	const hpPercent = player.hp / player.maxHp;
-
+	
+	// Position HP elements from right edge
+	const hpBarX = canvas.width - hpBarWidth - margin;
+	const hpBarY = (statusBarHeight - hpBarHeight)/2; // Center vertically
+	
 	// HP Bar background
 	ctx.fillStyle = '#333';
-	ctx.fillRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
-
+	ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+	
 	// HP Bar fill with color based on percentage
 	ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
-	ctx.fillRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth * hpPercent, hpBarHeight);
-
-	// Optional: Add border to HP bar for better visibility
-	ctx.strokeStyle = '#FFFFFF';
+	ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight);
+	
+	// HP Bar border
+	ctx.strokeStyle = '#fff';
 	ctx.lineWidth = 1;
-	ctx.strokeRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
+	ctx.strokeRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+	
+	// HP text label
+	ctx.fillStyle = '#fff';
+	ctx.textAlign = 'right';
+	ctx.fillText('HP:', hpBarX - 5, statusBarHeight/2);
 
-    // UI separators
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.fillRect(canvas.width / 3, 5, 1, 30);
-    ctx.fillRect(canvas.width * 2 / 3, 5, 1, 30);
     
     // Update and draw background
     updateStars();
