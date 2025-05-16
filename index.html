@@ -81,14 +81,41 @@
             z-index: 200;
         }
 		.socialLink {
-			transition: transform 0.2s;
-			display: block;
+		    transition: transform 0.2s;
+		    display: block;
+		    position: relative; /* Add this */
+		    z-index: 110; /* Add this to ensure icons are visible */
 		}
 		.socialLink:hover {
-			transform: scale(1.1);
+		    transform: scale(1.1);
 		}
 		.socialLink img {
-			border-radius: 8px;
+		    border-radius: 8px;
+		    width: 50px;  /* Ensure consistent width */
+		    height: 50px; /* Ensure consistent height */
+		    object-fit: contain; /* Maintain aspect ratio */
+		}
+		
+		/* Add these new rules for container positioning */
+		#socialLinks, #socialLinks2 {
+		    margin-top: 20px;
+		    display: flex;
+		    justify-content: center;
+		    gap: 20px;
+		    width: 100%;
+		    position: relative;
+		    z-index: 110;
+		}
+		
+		/* Add responsive sizing for very small screens */
+		@media screen and (max-width: 360px) {
+		    .socialLink img {
+		        width: 40px;
+		        height: 40px;
+		    }
+		    #socialLinks, #socialLinks2 {
+		        gap: 15px;
+		    }
 		}
     </style>
 </head>
@@ -109,13 +136,13 @@
 		    <div style="color: white; font-weight: bold; margin-bottom: 8px;">PIDÄ POHJASSA ALOITTAAKSESI</div>
 		    <canvas id="startButtonCanvas" width="335" height="125" style="cursor: pointer; max-width: 100%;"></canvas>
 		</div>
-		<div id="socialLinks" style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
-			<a href="https://open.spotify.com/track/38Axyw968uHdx7JJxUni6y" target="_blank" class="socialLink">
-				<img src="Spoti.png" alt="Spotify" width="50" height="50">
-			</a>
-			<a href="https://www.instagram.com/jakkepoikanen?igsh=Y2d2YzBvemJqam52" target="_blank" class="socialLink">
-				<img src="ig.png" alt="Instagram" width="50" height="50">
-			</a>
+		<div id="socialLinks">
+		    <a href="https://open.spotify.com/track/38Axyw968uHdx7JJxUni6y" target="_blank" class="socialLink">
+		        <img src="Spoti.png" alt="Spotify">
+		    </a>
+		    <a href="https://www.instagram.com/jakkepoikanen?igsh=Y2d2YzBvemJqam52" target="_blank" class="socialLink">
+		        <img src="ig.png" alt="Instagram">
+		    </a>
 		</div>
 	</div>
 
@@ -123,13 +150,13 @@
 		<h2>Game Over</h2>
 		<p>Final Score: <span id="finalScore">0</span></p>
 		<canvas id="restartButtonCanvas" width="335" height="125" style="cursor: pointer; max-width: 100%;"></canvas>
-		<div id="socialLinks2" style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
-			<a href="https://open.spotify.com/track/38Axyw968uHdx7JJxUni6y" target="_blank" class="socialLink">
-				<img src="Spoti.png" alt="Spotify" width="50" height="50">
-			</a>
-			<a href="https://www.instagram.com/jakkepoikanen?igsh=Y2d2YzBvemJqam52" target="_blank" class="socialLink">
-				<img src="ig.png" alt="Instagram" width="50" height="50">
-			</a>
+		<div id="socialLinks2">
+		    <a href="https://open.spotify.com/track/38Axyw968uHdx7JJxUni6y" target="_blank" class="socialLink">
+		        <img src="Spoti.png" alt="Spotify">
+		    </a>
+		    <a href="https://www.instagram.com/jakkepoikanen?igsh=Y2d2YzBvemJqam52" target="_blank" class="socialLink">
+		        <img src="ig.png" alt="Instagram">
+		    </a>
 		</div>
 	</div>
     <script>
