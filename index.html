@@ -851,13 +851,14 @@ document.addEventListener('visibilitychange', function() {
         const groupSpawnDelay = 15000; // Spawn group every 15 seconds
         // Player
         const player = {
-            x: canvas.width / 2,
-            y: canvas.height - 80,
-            size: 95,
-            hp: 100,
-            maxHp: 100,
-            bullets: []
-        };
+	    x: canvas.width / 2,
+	    y: canvas.height - 80,
+	    size: 95,
+	    hp: 100,
+	    maxHp: 100,
+	    bullets: [],
+	    hitboxRatio: 0.6 // Hitbox is 60% of sprite size
+	};
         // Game objects
         const enemies = [];
         const enemyBullets = [];
@@ -1384,17 +1385,20 @@ function restartGame() {
 			// Boss shooting
 			bossShooting();
 			
-			// Check for player collision with boss
+			// Calculate actual hitbox size for player
+			const playerHitboxSize = player.size * player.hitboxRatio;
+			
+			// Check for player collision with boss using adjusted hitbox
 			if (checkCollision({
-				x: boss.x - boss.width/2,
-				y: boss.y - boss.height/2,
-				width: boss.width,
-				height: boss.height
+			    x: boss.x - boss.width/2,
+			    y: boss.y - boss.height/2,
+			    width: boss.width,
+			    height: boss.height
 			}, {
-				x: player.x - player.size/2,
-				y: player.y - player.size/2,
-				width: player.size,
-				height: player.size
+			    x: player.x - playerHitboxSize/2,
+			    y: player.y - playerHitboxSize/2,
+			    width: playerHitboxSize,
+			    height: playerHitboxSize
 			})) {
 				player.hp -= 20;
 				if (player.hp <= 0) {
@@ -2190,13 +2194,16 @@ function updateEnemyBullets() {
             continue;
         }
         
-        // Check player collision with bullet
-        if (!playerInvulnerable && checkCollision(bullet, {
-			x: player.x - player.size/2,
-			y: player.y - player.size/2,
-			width: player.size,
-			height: player.size
-		})) {
+        // Calculate actual hitbox size for player
+	const playerHitboxSize = player.size * player.hitboxRatio;
+	
+	// Check player collision with bullet using adjusted hitbox
+	if (!playerInvulnerable && checkCollision(bullet, {
+	    x: player.x - playerHitboxSize/2,
+	    y: player.y - playerHitboxSize/2,
+	    width: playerHitboxSize,
+	    height: playerHitboxSize
+	})) {
 			// Check if shield is active
 			if (shieldActive) {
 				// Shield absorbs the hit
@@ -2407,12 +2414,17 @@ function updateEnemyBullets() {
 					}
 				}
 				
-				// Check for collision with player for all enemy types
+				// Calculate actual hitbox size
+				const playerHitboxSize = player.size * player.hitboxRatio;
+				// Use hitbox center offset to keep hitbox centered within the sprite
+				const playerHitboxOffset = (player.size - playerHitboxSize) / 2;
+				
+				// Check for collision with player's adjusted hitbox
 				if (!playerInvulnerable && checkCollision(enemy, {
-					x: player.x - player.size/2,
-					y: player.y - player.size/2,
-					width: player.size,
-					height: player.size
+				    x: player.x - playerHitboxSize/2,
+				    y: player.y - playerHitboxSize/2,
+				    width: playerHitboxSize,
+				    height: playerHitboxSize
 				})) {
 					// Calculate damage based on enemy type
 					let damage = 10; // Default damage
