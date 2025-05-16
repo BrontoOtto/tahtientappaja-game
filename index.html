@@ -1013,7 +1013,7 @@ function showLoadingScreen() {
     ctx.fillStyle = 'white';
     ctx.font = '24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('LOADING...', canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText('LADATAAN...', canvas.width / 2, canvas.height / 2 - 50);
     
     // Draw loading bar background
     ctx.fillStyle = '#333';
@@ -1390,7 +1390,7 @@ function restartGame() {
 			bossAnimationTimer = Date.now();  // Reset animation timer
 			boss = {
 				x: canvas.width / 2,
-				y: 100,
+				y: -100, // Start off-screen at top
 				width: 75,
 				height: 75,
 				hp: 300,
@@ -1401,13 +1401,18 @@ function restartGame() {
 				moveSpeed: 1.5,
 				movePattern: 0,      // 0 for horizontal, 1 for diagonal
 				patternTimer: 0,     // For switching patterns
-				patternDuration: 5000 // Switch pattern every 5 seconds
+				patternDuration: 5000, // Switch pattern every 5 seconds
+				entrySequence: true, // Flag for entry animation
+				targetY: 100 // Target position for entry animation
 			};
 		}
 
 		// Add this function to handle boss shooting
 		function bossShooting() {
 			if (!boss) return;
+			
+			// Don't shoot during entry sequence
+			if (boss.entrySequence) return;
 			
 			const now = Date.now();
 			
@@ -1471,6 +1476,26 @@ function restartGame() {
 			
 			const now = Date.now();
 			
+			// Handle entry sequence first
+			if (boss.entrySequence) {
+				// Move boss down smoothly
+				boss.y += 2; // Move boss down at same speed as player entry
+				
+				// Keep boss centered during entry
+				boss.x = canvas.width / 2;
+				
+				// Check if boss reached target position
+				if (boss.y >= boss.targetY) {
+					boss.y = boss.targetY;
+					boss.entrySequence = false; // End entry sequence
+					boss.patternTimer = now; // Start pattern timer now
+				}
+				
+				// Don't do normal movement or shooting during entry
+				return;
+			}
+			
+			// Normal boss behavior after entry sequence
 			// Check if it's time to switch patterns
 			if (now - boss.patternTimer >= boss.patternDuration) {
 				boss.movePattern = (boss.movePattern + 1) % 3; // Toggle between 3 patterns
@@ -1509,7 +1534,7 @@ function restartGame() {
 				boss.y = 80 + Math.sin(now / 1000) * 30;
 			}
 			
-			// Boss shooting
+			// Boss shooting - only shoot after entry sequence is complete
 			bossShooting();
 			
 			// Calculate actual hitbox size for player
@@ -1517,15 +1542,15 @@ function restartGame() {
 			
 			// Check for player collision with boss using adjusted hitbox
 			if (checkCollision({
-			    x: boss.x - boss.width/2,
-			    y: boss.y - boss.height/2,
-			    width: boss.width,
-			    height: boss.height
+				x: boss.x - boss.width/2,
+				y: boss.y - boss.height/2,
+				width: boss.width,
+				height: boss.height
 			}, {
-			    x: player.x - playerHitboxSize/2,
-			    y: player.y - playerHitboxSize/2,
-			    width: playerHitboxSize,
-			    height: playerHitboxSize
+				x: player.x - playerHitboxSize/2,
+				y: player.y - playerHitboxSize/2,
+				width: playerHitboxSize,
+				height: playerHitboxSize
 			})) {
 				player.hp -= 20;
 				if (player.hp <= 0) {
