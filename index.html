@@ -7,6 +7,7 @@
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         body {
 			margin: 0;
@@ -339,25 +340,44 @@ function assetLoaded() {
         canvas.height = 800;
 		
 		function resizeCanvas() {
-			// Get the dimensions of the viewport
-			const viewportWidth = window.innerWidth;
-			const viewportHeight = window.innerHeight;
-			
-			// Set canvas size to fit screen while maintaining aspect ratio
-			if (viewportWidth / viewportHeight > 1) {
-				// Landscape orientation
-				canvas.height = Math.min(viewportHeight * 0.95, 800);
-				canvas.width = canvas.height / 2; // Maintain your 1:2 aspect ratio
-			} else {
-				// Portrait orientation (most phones)
-				canvas.width = Math.min(viewportWidth * 0.95, 400);
-				canvas.height = canvas.width * 2; // Maintain your 1:2 aspect ratio
-			}
-			
-			// Recreate mobile controls with new canvas dimensions
-			if (isMobile) {
-				createMobileControls();
-			}
+		    // Get the dimensions of the viewport
+		    const viewportWidth = window.innerWidth;
+		    const viewportHeight = window.innerHeight;
+		    
+		    // Special handling for very small screens like iPhone SE
+		    const isVerySmallScreen = viewportWidth <= 320 || viewportHeight <= 568;
+		    
+		    // Set canvas size to fit screen while maintaining aspect ratio
+		    if (viewportWidth / viewportHeight > 1) {
+		        // Landscape orientation
+		        canvas.height = Math.min(viewportHeight * 0.95, 800);
+		        canvas.width = canvas.height / 2; // Maintain your 1:2 aspect ratio
+		    } else {
+		        // Portrait orientation (most phones)
+		        const widthPercentage = isVerySmallScreen ? 0.98 : 0.95; // Use more of the screen for small devices
+		        canvas.width = Math.min(viewportWidth * widthPercentage, 400);
+		        canvas.height = canvas.width * 2; // Maintain your 1:2 aspect ratio
+		    }
+		    
+		    // For iPhone SE and similar small devices, ensure canvas is properly positioned
+		    if (isVerySmallScreen) {
+		        // Force minimum dimensions to avoid scaling issues
+		        canvas.width = Math.max(canvas.width, 300);
+		        
+		        // Apply additional styles to canvas
+		        canvas.style.border = 'none';
+		    }
+		    
+		    // Recreate mobile controls with new canvas dimensions
+		    if (isMobile) {
+		        createMobileControls();
+		    }
+		    
+		    // If game is already running, make sure UI elements are updated
+		    if (isGameRunning && scoreElement && hpElement) {
+		        scoreElement.textContent = score;
+		        hpElement.textContent = player.hp;
+		    }
 		}
 		
         // Game state global variables
@@ -2799,40 +2819,58 @@ function update() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Add UI elements - always visible regardless of screen size
-	// UI Background - make it slightly taller for better visibility
-	const statusBarHeight = Math.max(50, Math.min(canvas.height * 0.08, 70));
-	ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Make background more opaque
+	// Check if we're on a very small screen like iPhone SE
+	const isSmallScreen = canvas.width <= 320;
+	
+	// UI Background - fixed height for small screens
+	const statusBarHeight = isSmallScreen ? 35 : Math.max(50, Math.min(canvas.height * 0.08, 70));
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.9)'; // Make background more opaque for visibility
 	ctx.fillRect(0, 0, canvas.width, statusBarHeight);
-
-	// Score display - positioned to the left
+	
+	// Left side margin adjustment for small screens
+	const leftMargin = isSmallScreen ? 5 : 20;
+	
+	// Score display - positioned to the left, smaller for small screens
 	ctx.fillStyle = '#4CAF50';
-	const fontSize = Math.max(16, statusBarHeight * 0.4); // Adjust font size
+	const fontSize = isSmallScreen ? 14 : Math.max(16, statusBarHeight * 0.4);
 	ctx.font = `bold ${fontSize}px Arial`;
 	ctx.textAlign = 'left';
-	ctx.fillText(`Score: ${score}`, 20, statusBarHeight * 0.65);
-
-	// HP text and bar - positioned to the right
-	ctx.fillStyle = '#FFFFFF';
-	ctx.font = `bold ${Math.max(14, statusBarHeight * 0.3)}px Arial`;
-	ctx.textAlign = 'right';
-
-	// HP bar - positioned to the right
-	const hpBarWidth = Math.min(canvas.width * 0.25, 120);
-	const hpBarHeight = statusBarHeight * 0.4;
+	ctx.textBaseline = 'middle'; // This centers text vertically
+	ctx.fillText(`Score: ${score}`, leftMargin, statusBarHeight * 0.5); // Centered vertically
+	
+	// HP bar - positioned to the right, narrower for small screens
+	const hpBarWidth = isSmallScreen ? 
+	    Math.min(canvas.width * 0.3, 80) : // Narrower on small screens
+	    Math.min(canvas.width * 0.25, 120); // Normal width
+	const hpBarHeight = isSmallScreen ? statusBarHeight * 0.5 : statusBarHeight * 0.4;
 	const hpPercent = player.hp / player.maxHp;
-
+	const rightMargin = isSmallScreen ? 5 : 15;
+	
+	// HP Bar positioning - center vertically
+	const hpBarY = (statusBarHeight - hpBarHeight) / 2;
+	
 	// HP Bar background
 	ctx.fillStyle = '#333';
-	ctx.fillRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
-
+	ctx.fillRect(canvas.width - hpBarWidth - rightMargin, hpBarY, hpBarWidth, hpBarHeight);
+	
 	// HP Bar fill with color based on percentage
 	ctx.fillStyle = hpPercent > 0.6 ? '#4CAF50' : hpPercent > 0.3 ? '#FFC107' : '#F44336';
-	ctx.fillRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth * hpPercent, hpBarHeight);
-
-	// Optional: Add border to HP bar for better visibility
+	ctx.fillRect(canvas.width - hpBarWidth - rightMargin, hpBarY, hpBarWidth * hpPercent, hpBarHeight);
+	
+	// HP Bar border
 	ctx.strokeStyle = '#FFFFFF';
 	ctx.lineWidth = 1;
-	ctx.strokeRect(canvas.width - hpBarWidth - 15, statusBarHeight * 0.35, hpBarWidth, hpBarHeight);
+	ctx.strokeRect(canvas.width - hpBarWidth - rightMargin, hpBarY, hpBarWidth, hpBarHeight);
+	
+	// HP Label - positioned to left of HP bar
+	ctx.fillStyle = '#FFFFFF';
+	ctx.font = `bold ${isSmallScreen ? 12 : Math.max(14, statusBarHeight * 0.3)}px Arial`;
+	ctx.textAlign = 'right';
+	ctx.fillText('HP:', canvas.width - hpBarWidth - rightMargin - 5, statusBarHeight * 0.5); // Centered vertically
+	
+	// Also update the DOM elements (hidden but kept in sync)
+	scoreElement.textContent = score;
+	hpElement.textContent = player.hp;
 
     // UI separators
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
@@ -3297,6 +3335,51 @@ if (document.readyState === "complete" || document.readyState === "interactive")
 			ctx.fillText(`Bullets: ${player.bullets.length + enemyBullets.length}`, 10, canvas.height - 30);
 			ctx.fillText(`Game Time: ${Math.floor(gameTime)}s`, 10, canvas.height - 15);
 		}
+		});
+		// Debug visualization function - call this at the end of your update function
+		function drawDebugInfo() {
+			if (!DEBUG_MODE) return;
+			
+			// Show FPS
+			const now = Date.now();
+			if (!window.lastFpsUpdate) window.lastFpsUpdate = now;
+			if (!window.frameCount) window.frameCount = 0;
+			if (!window.currentFps) window.currentFps = 0;
+			
+			window.frameCount++;
+			
+			if (now - window.lastFpsUpdate > 1000) {
+				window.currentFps = window.frameCount;
+				window.frameCount = 0;
+				window.lastFpsUpdate = now;
+			}
+			
+			// Draw debug info
+			ctx.fillStyle = 'white';
+			ctx.font = '12px Arial';
+			ctx.textAlign = 'left';
+			ctx.fillText(`FPS: ${window.currentFps}`, 10, canvas.height - 60);
+			ctx.fillText(`Enemies: ${enemies.length}`, 10, canvas.height - 45);
+			ctx.fillText(`Bullets: ${player.bullets.length + enemyBullets.length}`, 10, canvas.height - 30);
+			ctx.fillText(`Game Time: ${Math.floor(gameTime)}s`, 10, canvas.height - 15);
+		}
+
+        // Add special debug info for small screens
+        if (/iPhone|iPod/.test(navigator.userAgent) && (window.innerWidth <= 320 || window.innerHeight <= 568)) {
+            console.log("iPhone SE detected - applying special handling");
+            console.log("Screen dimensions:", window.innerWidth, "x", window.innerHeight);
+            
+            // Force redraw of canvas on next frame
+            setTimeout(function() {
+                resizeCanvas();
+                if (isGameRunning) {
+                    // Force redraw of game UI
+                    scoreElement.textContent = score;
+                    hpElement.textContent = player.hp;
+                }
+            }, 100);
+        }
+    </script>
     </script>
 </body>
 </html>
