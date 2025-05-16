@@ -1467,12 +1467,12 @@ function animateMainCharacter() {
     updateStartButton();
 }
 function updateStartButton() {
-	// Ensure start button image exists
-	if (!window.startButtonImage) {
-		window.startButtonImage = new Image();
-		window.startButtonImage.src = 'start.png';
-		console.log("Created missing start button image");
-	}
+    // Ensure start button image exists
+    if (!window.startButtonImage) {
+        window.startButtonImage = new Image();
+        window.startButtonImage.src = 'start.png';
+        console.log("Created missing start button image");
+    }
     if (!window.startButtonImage || !window.startButtonImage.complete) {
         console.log("Start button image not ready yet");
         // Try again in a moment
@@ -1489,6 +1489,12 @@ function updateStartButton() {
     // Get the canvas context and clear it
     const buttonCtx = buttonCanvas.getContext('2d');
     buttonCtx.clearRect(0, 0, buttonCanvas.width, buttonCanvas.height);
+    
+    // Add instruction text above button
+    buttonCtx.font = 'bold 14px Arial';
+    buttonCtx.fillStyle = 'white';
+    buttonCtx.textAlign = 'center';
+    buttonCtx.fillText('PIDÄ POHJASSA ALOITTAAKSESI', buttonCanvas.width / 2, -10);
     
     // Calculate frame position in the sprite sheet
     const frameWidth = 670;
