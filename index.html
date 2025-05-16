@@ -939,35 +939,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start the loading process
     setTimeout(startLoading, 100);
 });
-// Handle safe areas for different mobile browsers
-function updateSafeAreas() {
-    // Get all screen elements
-    const screens = document.querySelectorAll('.screen');
-    
-    // Check if running on iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    
-    // Apply extra padding for iOS notch/dynamic island and bottom bar
-    if (isIOS) {
-        screens.forEach(screen => {
-            screen.style.paddingTop = 'max(env(safe-area-inset-top), 40px)';
-            screen.style.paddingBottom = 'max(env(safe-area-inset-bottom), 40px)';
-        });
-    }
-    
-    // Extra handling for bottom nav bars in browsers like Chrome
-    const viewportHeight = window.innerHeight;
-    if (viewportHeight < 600) {
-        // For very small screens, reduce element sizes
-        document.documentElement.style.setProperty('--scale-factor', '0.85');
-    } else {
-        document.documentElement.style.setProperty('--scale-factor', '1');
-    }
-}
 
-// Call this function on load and resize
-window.addEventListener('resize', updateSafeAreas);
-document.addEventListener('DOMContentLoaded', updateSafeAreas);
 document.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     
