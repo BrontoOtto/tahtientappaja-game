@@ -31,39 +31,43 @@
 			-webkit-backface-visibility: hidden;
         }
         .screen {
-	    position: fixed;
-	    top: 0;
-	    left: 0;
-	    width: 100%;
-	    height: 100%;
-	    padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
-	    background: rgba(16, 22, 78, 0.4);
-	    color: white;
-	    text-align: center;
-	    z-index: 100;
-	    display: none;
-	    box-sizing: border-box;
-	    /* Add flex layout to position content */
-	    display: none;
-	    flex-direction: column;
-	    justify-content: center;
-	    align-items: center;
-	    /* For iPhone notches and dynamic islands */
-	    padding-top: max(env(safe-area-inset-top, 20px), 40px);
-	    padding-bottom: max(env(safe-area-inset-bottom, 20px), 40px);
-	}
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 10px) env(safe-area-inset-bottom, 10px) env(safe-area-inset-left, 10px);
+			background: rgba(16, 22, 78, 0.4);
+			color: white;
+			text-align: center;
+			z-index: 100;
+			display: none;
+			box-sizing: border-box;
+			/* Add flex layout to position content */
+			display: none;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			/* Better safe area handling */
+			padding-top: max(env(safe-area-inset-top, 10px), 20px);
+			padding-bottom: max(env(safe-area-inset-bottom, 10px), 20px);
+			/* Ensure content fits */
+			min-height: 100vh;
+			min-height: 100dvh; /* Dynamic viewport height for mobile */
+		}
 	
 	/* Add responsive sizing classes */
 	.responsive-container {
-	    width: 100%;
-	    max-width: 400px;
-	    margin: 0 auto;
-	    display: flex;
-	    flex-direction: column;
-	    justify-content: center;
-	    align-items: center;
-	    /* Add space between elements */
-	    gap: 10px; 
+		width: 100%;
+		max-width: 400px;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: clamp(5px, 2vh, 15px); /* Responsive gap */
+		padding: 10px; /* Add some padding */
+		box-sizing: border-box;
 	}
 	
 	.screen img, .screen canvas {
@@ -74,15 +78,15 @@
 	
 	/* Add specific spacing for elements */
 	.logo-img {
-	    max-width: 80%;
-	    max-height: 20vh;
-	    margin-bottom: 10px;
+		max-width: 90%;
+		max-height: 15vh; /* Reduced from 20vh */
+		margin-bottom: 5px; /* Reduced margin */
 	}
-	
+
 	.character-anim {
-	    max-width: 80%;
-	    max-height: 30vh;
-	    margin-bottom: 10px;
+		max-width: 80%;
+		max-height: 25vh; /* Reduced from 30vh */
+		margin-bottom: 5px; /* Reduced margin */
 	}
 	
 	.button-container {
@@ -119,18 +123,43 @@
 	    object-fit: contain;
 	}
 	
-	/* Responsive scaling for small screens */
+	/* Better support for small screens */
 	@media screen and (max-height: 600px) {
-	    .logo-img {
-	        max-height: 15vh;
-	    }
-	    .character-anim {
-	        max-height: 25vh;
-	    }
-	    .socialLink img {
-	        width: 40px;
-	        height: 40px;
-	    }
+		.logo-img {
+			max-height: 12vh;
+			margin-bottom: 2px;
+		}
+		.character-anim {
+			max-height: 20vh;
+			margin-bottom: 2px;
+		}
+		.button-container {
+			margin: 5px auto;
+		}
+		.socialLink img {
+			width: 35px;
+			height: 35px;
+		}
+		#socialLinks, #socialLinks2 {
+			gap: 15px;
+			margin-top: 10px;
+		}
+	}
+
+	/* Extra small screens */
+	@media screen and (max-height: 500px) {
+		.logo-img {
+			max-height: 10vh;
+		}
+		.character-anim {
+			max-height: 15vh;
+		}
+		.responsive-container {
+			gap: 5px;
+		}
+		#startButtonCanvas, #restartButtonCanvas {
+			height: 80px !important;
+		}
 	}
 		#logoContainer {
 			display: flex;
@@ -398,7 +427,7 @@ function assetLoaded() {
 		// Debug mode flag - set to true to enable console logs and visual debug info
 		const DEBUG_MODE = true;
 		// Powerup milestone tracking
-		let reachedMilestones = [false, false, false, false];
+		// let reachedMilestones = [false, false, false, false];
 		// Global mouse position tracking
 		let mouseX, mouseY;
 		const NUM_MAIN_SCREEN_STARS = 50;
@@ -1036,12 +1065,12 @@ function initializeMusic() {
         backgroundMusic.preload = 'auto'; // Ensure full preload
         
         // Set up seamless looping by detecting near-end
-        backgroundMusic.addEventListener('timeupdate', function() {
-            // If we're within 0.1 seconds of the end, restart
-            if (this.duration - this.currentTime < 0.1) {
-                this.currentTime = 0;
-            }
-        });
+		backgroundMusic.addEventListener('timeupdate', function() {
+			// If we're within 1 second of the end, restart earlier for seamless loop
+			if (this.duration - this.currentTime < 10.0) {
+				this.currentTime = 0;
+			}
+		});
         
         // Force playback repeatedly
         const forcePlay = () => {
@@ -1340,10 +1369,10 @@ function restartGame() {
 	shieldHealth = 0;
 	powerup = null;
 	powerupSpawned = false;
-	// Reset milestone tracking properly
-	for (let i = 0; i < reachedMilestones.length; i++) {
-		reachedMilestones[i] = false;
-	}
+	// // Reset milestone tracking properly
+	//for (let i = 0; i < reachedMilestones.length; i++) {
+	//	reachedMilestones[i] = false;
+	//}
 
     // Remove any existing powerup indicator
     const indicator = document.getElementById('powerupIndicator');
@@ -1382,10 +1411,10 @@ function restartGame() {
 			boss = {
 				x: canvas.width / 2,
 				y: -150, // Start higher off-screen for more dramatic entrance
-				width: 75,
-				height: 75,
-				hp: 300,
-				maxHp: 300,
+				width: 90,
+				height: 90,
+				hp: 450,
+				maxHp: 450,
 				lastShot: 0,
 				shootingDelay: 1000, // 1 second
 				moveDirection: 1,    // 1 for right, -1 for left
@@ -1402,7 +1431,8 @@ function restartGame() {
 				// New laser pattern properties
 				laserActive: false,
 				laserAngle: 0,
-				laserRotationSpeed: 0.015, // Radians per frame (slower rotation)
+				laserRotationSpeed: 0.015, // Radians per frame (faster rotation)
+				laserRotationDirection: 1, // 1 for clockwise, -1 for counterclockwise
 				laserWidth: 5,
 				laserLength: 1000, // Long enough to reach screen edges
 				laserDamage: 1, // Damage per frame while in contact with laser
@@ -1527,6 +1557,8 @@ function restartGame() {
 					boss.laserStartupTimer = now;
 					boss.laserRotations = 0;
 					boss.laserAngle = 0;
+					// Randomly choose rotation direction: 50% chance for each direction
+					boss.laserRotationDirection = Math.random() < 0.5 ? 1 : -1;
 				} else {
 					// Choose one of the original patterns
 					boss.movePattern = Math.floor(Math.random() * 3); // 0, 1, or 2
@@ -1595,9 +1627,9 @@ function restartGame() {
 
 			// Handle active laser pattern
 			if (boss.laserActive) {
-				// Increase angle for rotation
-				boss.laserAngle += boss.laserRotationSpeed;
-				boss.laserRotations += boss.laserRotationSpeed;
+				// Increase angle for rotation with direction
+				boss.laserAngle += boss.laserRotationSpeed * boss.laserRotationDirection;
+				boss.laserRotations += boss.laserRotationSpeed; // Always positive for tracking total rotation
 				
 				// Check if we've completed two full rotations
 				if (boss.laserRotations >= boss.laserRotationLimit) {
@@ -2087,8 +2119,8 @@ function endGame() {
                 centerY: groupCenterY,
                 radius: radius,
                 angle: 0,
-                rotationSpeed: 0.005,
-                moveSpeed: 0.3,
+                rotationSpeed: 0.012,
+                moveSpeed: 0.5,
                 members: []
             };
             // Spawn 10 enemies in a circle
@@ -2991,28 +3023,17 @@ function update() {
 		}
 	}
     
-    // Stop spawning regular enemies at 190 seconds (20 seconds before boss)
-	if (gameTime >= 195 && !regularEnemiesDisabled) {
+    // Stop spawning regular enemies at 185 seconds
+	if (gameTime >= 185 && !regularEnemiesDisabled) {
 		regularEnemiesDisabled = true;
 		console.log("Regular enemies disabled at time: " + gameTime);
 	}
 
-	// Spawn boss at 210 seconds, without clearing existing enemies
-	if (gameTime >= 205 && !bossSpawned) {
+	// Spawn boss at 195 seconds, without clearing existing enemies
+	if (gameTime >= 195 && !bossSpawned) {
 		// Spawn boss without clearing enemies
 		spawnBoss();
 		console.log("Boss spawned at time: " + gameTime);
-	}
-    const powerupMilestones = [500, 1500, 3000, 5000];
-    // Check for powerup milestones but only spawn if no powerup is currently active
-	for (let i = 0; i < powerupMilestones.length; i++) {
-		if (score >= powerupMilestones[i] && !reachedMilestones[i] && !powerup) {
-			// Spawn at a random position at top of screen
-			const randomX = Math.random() * (canvas.width - 60) + 30;
-			spawnPowerup(randomX, -30);
-			reachedMilestones[i] = true;
-			break; // Only spawn one powerup at a time
-		}
 	}
 
     // Update powerup position and check for collection
@@ -3077,9 +3098,16 @@ function update() {
 		drawBoss();
 		
 		if (boss.laserActive && checkLaserCollision()) {
-			// Apply laser damage
-			player.hp -= boss.laserDamage;
-			hpElement.textContent = player.hp;
+			// Check if shield is active
+			if (shieldActive) {
+				// Shield absorbs the laser hit
+				shieldActive = false;
+				createExplosion(player.x, player.y, 0.8); // Shield break effect
+			} else {
+				// No shield, take damage normally
+				player.hp -= boss.laserDamage;
+				hpElement.textContent = player.hp;
+			}
 			
 			// Visual feedback for being hit by laser
 			if (Math.random() < 0.2) { // Only show explosion occasionally to avoid too many effects
