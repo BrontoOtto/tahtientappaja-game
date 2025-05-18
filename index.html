@@ -1059,7 +1059,7 @@ function initializeMusic() {
     
     // For all devices - unified approach
     if (!backgroundMusic) {
-        backgroundMusic = new Audio('tappaja.mp3');
+        backgroundMusic = new Audio('tappaja1.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
         backgroundMusic.preload = 'auto'; // Ensure full preload
@@ -1067,7 +1067,7 @@ function initializeMusic() {
         // Set up seamless looping by detecting near-end
 		backgroundMusic.addEventListener('timeupdate', function() {
 			// If we're within 1 second of the end, restart earlier for seamless loop
-			if (this.duration - this.currentTime < 10.0) {
+			if (this.duration - this.currentTime < 2.0) {
 				this.currentTime = 0;
 			}
 		});
