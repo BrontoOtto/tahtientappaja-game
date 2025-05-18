@@ -1403,14 +1403,30 @@ function restartGame() {
 				shootingDelay: 1000, // 1 second
 				moveDirection: 1,    // 1 for right, -1 for left
 				moveSpeed: 1.5,
-				movePattern: 0,      // 0 for horizontal, 1 for diagonal
+				movePattern: 0,      // Now 0: horizontal, 1: diagonal, 2: charge at player, 3: X-laser
 				patternTimer: 0,     // For switching patterns
 				patternDuration: 5000, // Switch pattern every 5 seconds
 				entrySequence: true, // Flag for entry animation
 				targetY: 100, // Target position for entry animation
 				entrySpeed: 0.5, // Slower entry speed
 				invulnerable: true, // Make boss invulnerable during entry
-				flashEffect: 0 // For visual invulnerability effect
+				flashEffect: 0, // For visual invulnerability effect
+				
+				// New laser pattern properties
+				laserActive: false,
+				laserAngle: 0,
+				laserRotationSpeed: 0.015, // Radians per frame (slower rotation)
+				laserWidth: 5,
+				laserLength: 1000, // Long enough to reach screen edges
+				laserDamage: 1, // Damage per frame while in contact with laser
+				laserCooldown: false,
+				laserCooldownTimer: 0,
+				laserCooldownDuration: 1500, // 1.5 seconds cooldown
+				laserStartupPhase: false,
+				laserStartupTimer: 0,
+				laserStartupDuration: 2000, // 2 seconds to prepare laser
+				laserRotations: 0, // Track how many degrees we've rotated
+				laserRotationLimit: Math.PI * 4 // Two full 360-degree rotations (720 degrees total)
 			};
 		}
 
@@ -1515,13 +1531,102 @@ function restartGame() {
 			
 			// Normal boss behavior after entry sequence
 			// Check if it's time to switch patterns
-			if (now - boss.patternTimer >= boss.patternDuration) {
-				boss.movePattern = (boss.movePattern + 1) % 3; // Toggle between 3 patterns
+			if (!boss.laserActive && !boss.laserCooldown && !boss.laserStartupPhase && 
+				now - boss.patternTimer >= boss.patternDuration) {
+				// Randomly choose next pattern (60% chance for laser pattern)
+				if (Math.random() < 0.60) {
+					boss.movePattern = 3; // X-laser pattern
+					boss.laserStartupPhase = true;
+					boss.laserStartupTimer = now;
+					boss.laserRotations = 0;
+					boss.laserAngle = 0;
+				} else {
+					// Choose one of the original patterns
+					boss.movePattern = Math.floor(Math.random() * 3); // 0, 1, or 2
+				}
 				boss.patternTimer = now;
 			}
-			
-			// Pattern 0: Horizontal movement
+
+			// Handle laser cooldown
+			if (boss.laserCooldown) {
+				if (now - boss.laserCooldownTimer >= boss.laserCooldownDuration) {
+					boss.laserCooldown = false;
+					boss.movePattern = Math.floor(Math.random() * 3); // Go back to regular patterns
+					boss.patternTimer = now; // Reset pattern timer
+				}
+				// During cooldown, just stay in place
+				return;
+			}
+
+			// Handle laser startup phase
+			if (boss.laserStartupPhase) {
+				// Add pulsing red effect to entire screen as warning
+				const progress = (now - boss.laserStartupTimer) / boss.laserStartupDuration;
+				const pulse = Math.sin(now / 100) * 0.05;
+				
+				// Red flash warning - getting stronger as startup progresses
+				ctx.fillStyle = `rgba(255, 0, 0, ${pulse * progress})`;
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				
+				// Add sound effect if progress is at certain thresholds
+				if (progress > 0.25 && progress < 0.26 || 
+					progress > 0.5 && progress < 0.51 ||
+					progress > 0.75 && progress < 0.76) {
+					// If you have a warning sound effect, play it here
+					createExplosion(boss.x, boss.y, 0.5);
+				}
+				// Move to middle of the screen
+				const targetX = canvas.width / 2;
+				const targetY = canvas.height / 4; // 1/4 down from the top
+				
+				// Move towards target position
+				const dx = targetX - boss.x;
+				const dy = targetY - boss.y;
+				
+				boss.x += dx * 0.05; // Move 5% of the distance each frame
+				boss.y += dy * 0.05;
+				
+				// Check if startup phase is complete
+				if (now - boss.laserStartupTimer >= boss.laserStartupDuration &&
+					Math.abs(dx) < 5 && Math.abs(dy) < 5) { // Close enough to target
+					boss.laserStartupPhase = false;
+					boss.laserActive = true;
+					boss.x = targetX; // Snap to exact position
+					boss.y = targetY;
+					
+					// Create charging effect
+					for (let i = 0; i < 8; i++) {
+						createExplosion(
+							boss.x + Math.cos(i * Math.PI/4) * boss.width/2,
+							boss.y + Math.sin(i * Math.PI/4) * boss.width/2,
+							0.3
+						);
+					}
+				}
+				return;
+			}
+
+			// Handle active laser pattern
+			if (boss.laserActive) {
+				// Increase angle for rotation
+				boss.laserAngle += boss.laserRotationSpeed;
+				boss.laserRotations += boss.laserRotationSpeed;
+				
+				// Check if we've completed two full rotations
+				if (boss.laserRotations >= boss.laserRotationLimit) {
+					boss.laserActive = false;
+					boss.laserCooldown = true;
+					boss.laserCooldownTimer = now;
+					return;
+				}
+				
+				// Don't do regular movement or shooting during laser pattern
+				return;
+			}
+
+			// Original patterns code here (patterns 0, 1, 2)
 			if (boss.movePattern === 0) {
+				// Horizontal movement
 				boss.x += boss.moveSpeed * boss.moveDirection;
 				
 				// Bounce at edges
@@ -1529,8 +1634,8 @@ function restartGame() {
 					boss.moveDirection *= -1;
 				}
 			}
-			// Pattern 1: Diagonal movement
 			else if (boss.movePattern === 1) {
+				// Diagonal movement
 				boss.x += boss.moveSpeed * boss.moveDirection;
 				boss.y += Math.sin(now / 500) * 2; // Wavy up-down movement
 				
@@ -1542,18 +1647,26 @@ function restartGame() {
 				// Keep within vertical bounds
 				boss.y = Math.max(50, Math.min(canvas.height / 3, boss.y));
 			}
-			// Pattern 2: "Charge" at player
 			else if (boss.movePattern === 2) {
-				const targetX = player.x;
-				const dx = targetX - boss.x;
-				boss.x += (dx * 0.02); // Move 2% of the way to player each frame
+				// Charge at player pattern
+				const dx = player.x - boss.x;
+				const dy = player.y - boss.y;
+				const distance = Math.sqrt(dx * dx + dy * dy);
 				
-				// Slow up/down movement during this pattern
-				boss.y = 80 + Math.sin(now / 1000) * 30;
+				if (distance > 0) {
+					boss.x += (dx / distance) * boss.moveSpeed * 0.5; // Slower charge
+					boss.y += (dy / distance) * boss.moveSpeed * 0.5;
+				}
+				
+				// Keep boss on screen
+				boss.x = Math.max(boss.width/2, Math.min(canvas.width - boss.width/2, boss.x));
+				boss.y = Math.max(50, Math.min(canvas.height / 2, boss.y));
 			}
 			
-			// Boss shooting - only shoot after entry sequence is complete
-			bossShooting();
+			// Boss shooting - only if not in laser mode
+			if (boss.movePattern !== 3) {
+				bossShooting();
+			}
 			
 			// Calculate actual hitbox size for player
 			const playerHitboxSize = player.size * player.hitboxRatio;
@@ -1601,6 +1714,38 @@ function restartGame() {
 				ctx.shadowBlur = 15 + Math.sin(boss.flashEffect * 2) * 5;
 			}
 			
+			// Add charging effect during laser startup
+			if (boss.laserStartupPhase) {
+				// Pulsing red glow
+				ctx.save();
+				const progress = (Date.now() - boss.laserStartupTimer) / boss.laserStartupDuration;
+				const pulseSize = 20 + Math.sin(Date.now() / 100) * 10;
+				
+				ctx.beginPath();
+				ctx.arc(boss.x, boss.y, boss.width/2 + pulseSize * progress, 0, Math.PI * 2);
+				ctx.fillStyle = `rgba(255, 0, 0, ${0.1 + 0.2 * progress})`;
+				ctx.fill();
+				
+				// Add warning lines
+				if (progress > 0.7) {
+					ctx.lineWidth = 2;
+					ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+					
+					for (let i = 0; i < 4; i++) {
+						const angle = (i * Math.PI/2);
+						const endX = boss.x + Math.cos(angle) * (boss.width + 50);
+						const endY = boss.y + Math.sin(angle) * (boss.width + 50);
+						
+						ctx.beginPath();
+						ctx.moveTo(boss.x, boss.y);
+						ctx.lineTo(endX, endY);
+						ctx.stroke();
+					}
+				}
+				
+				ctx.restore();
+			}
+			
 			// Draw boss with animation
 			if (window.bossImage.complete) {
 				// Calculate the source y position based on current frame
@@ -1634,6 +1779,11 @@ function restartGame() {
 				ctx.stroke();
 			}
 			
+			// Draw laser beams if active
+			if (boss.laserActive) {
+				drawBossLaser();
+			}
+			
 			// Restore context if invulnerable effects were applied
 			if (boss.invulnerable) {
 				ctx.restore();
@@ -1651,6 +1801,98 @@ function restartGame() {
 			// HP Bar fill
 			ctx.fillStyle = `rgb(${255 * (1 - hpPercentage)}, ${255 * hpPercentage}, 0)`;
 			ctx.fillRect(boss.x - hpBarWidth/2, boss.y - boss.height/2 - 15, hpBarWidth * hpPercentage, hpBarHeight);
+		}
+		function drawBossLaser() {
+			if (!boss || !boss.laserActive) return;
+			
+			// Save context
+			ctx.save();
+			
+			// Set laser style
+			ctx.lineWidth = boss.laserWidth;
+			ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)'; // Red laser
+			ctx.shadowColor = 'rgba(255, 50, 50, 0.9)';
+			ctx.shadowBlur = 15;
+			
+			// Calculate center point for rotation
+			const centerX = boss.x;
+			const centerY = boss.y;
+			
+			// Draw four lines in X pattern
+			for (let i = 0; i < 4; i++) {
+				const angle = boss.laserAngle + (i * Math.PI/2); // 4 lines at 90-degree intervals
+				
+				// Calculate end points
+				const endX = centerX + Math.cos(angle) * boss.laserLength;
+				const endY = centerY + Math.sin(angle) * boss.laserLength;
+				
+				// Draw laser beam
+				ctx.beginPath();
+				ctx.moveTo(centerX, centerY);
+				ctx.lineTo(endX, endY);
+				ctx.stroke();
+				
+				// Add a glow effect
+				ctx.lineWidth = boss.laserWidth * 2;
+				ctx.strokeStyle = 'rgba(255, 0, 0, 0.2)';
+				ctx.beginPath();
+				ctx.moveTo(centerX, centerY);
+				ctx.lineTo(endX, endY);
+				ctx.stroke();
+			}
+			
+			// Restore context
+			ctx.restore();
+		}
+		
+		function checkLaserCollision() {
+			if (!boss || !boss.laserActive || playerInvulnerable) return false;
+			
+			// Calculate actual hitbox size for player
+			const playerHitboxSize = player.size * player.hitboxRatio;
+			const playerX = player.x;
+			const playerY = player.y;
+			const playerRadius = playerHitboxSize / 2;
+			
+			// Check collision with each of the 4 laser beams
+			for (let i = 0; i < 4; i++) {
+				const angle = boss.laserAngle + (i * Math.PI/2);
+				
+				// Parametric line equation for the laser
+				const laserStartX = boss.x;
+				const laserStartY = boss.y;
+				const laserDirX = Math.cos(angle);
+				const laserDirY = Math.sin(angle);
+				
+				// Calculate closest point on line to player center
+				const t = ((playerX - laserStartX) * laserDirX + (playerY - laserStartY) * laserDirY) /
+						 (laserDirX * laserDirX + laserDirY * laserDirY);
+				
+				// Find the closest point on the line
+				const closestX = laserStartX + t * laserDirX;
+				const closestY = laserStartY + t * laserDirY;
+				
+				// Check if closest point is within laser length
+				const distanceToLaserStart = Math.sqrt(
+					(closestX - laserStartX) * (closestX - laserStartX) +
+					(closestY - laserStartY) * (closestY - laserStartY)
+				);
+				
+				if (distanceToLaserStart <= boss.laserLength) {
+					// Check if player is close enough to the laser line
+					const distanceToPlayer = Math.sqrt(
+						(closestX - playerX) * (closestX - playerX) +
+						(closestY - playerY) * (closestY - playerY)
+					);
+					
+					// If distance less than player radius + laser width/2, we have a hit
+					if (distanceToPlayer <= playerRadius + boss.laserWidth/2) {
+						return true;
+					}
+				}
+			}
+			
+			return false;
 		}
 // Add this function to animate the main character on the start screen
 function animateMainCharacter() {
@@ -2905,10 +3147,43 @@ function update() {
     updateStars();
     
     // Update and draw boss if it exists
-    if (boss) {
-        updateBoss();
-        drawBoss();
-    }
+	if (boss) {
+		updateBoss();
+		drawBoss();
+		
+		if (boss.laserActive && checkLaserCollision()) {
+			// Apply laser damage
+			player.hp -= boss.laserDamage;
+			hpElement.textContent = player.hp;
+			
+			// Visual feedback for being hit by laser
+			if (Math.random() < 0.2) { // Only show explosion occasionally to avoid too many effects
+				createExplosion(player.x, player.y, 0.3);
+			}
+			
+			// Check for player death
+			if (player.hp <= 0) {
+				endGame();
+			}
+		}
+		
+		if (boss.laserCooldown) {
+			// Visual feedback for cooldown
+			const cooldownProgress = (now - boss.laserCooldownTimer) / boss.laserCooldownDuration;
+			
+			// Steam/smoke effect
+			if (Math.random() < 0.1) {
+				// Create small explosions around boss to simulate cooling down
+				const angle = Math.random() * Math.PI * 2;
+				const distance = Math.random() * boss.width/2;
+				createExplosion(
+					boss.x + Math.cos(angle) * distance,
+					boss.y + Math.sin(angle) * distance,
+					0.2
+				);
+			}
+		}
+	}
 
     drawStars();
     
