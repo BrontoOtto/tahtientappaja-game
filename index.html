@@ -3161,9 +3161,18 @@ function update() {
 		// Only apply controls after intro sequence is complete
 		// Touch/mouse follow controls
 		if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
-			// Smoothly interpolate toward touch/mouse position
-			player.x = player.x + (mouseX - player.x) * 0.2;
-			player.y = player.y + (mouseY - player.y) * 0.2;
+			// Calculate target position with mobile offset
+			let targetX = mouseX;
+			let targetY = mouseY;
+			
+			// Add upward offset on mobile to keep player visible above thumb
+			if (isMobile) {
+				targetY = mouseY - 80; // Move player 80 pixels above touch point
+			}
+			
+			// Smoothly interpolate toward target position
+			player.x = player.x + (targetX - player.x) * 0.2;
+			player.y = player.y + (targetY - player.y) * 0.2;
 		}
 		
 		// Always shoot when player is ready
