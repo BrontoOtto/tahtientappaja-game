@@ -1059,7 +1059,7 @@ function initializeMusic() {
     
     // For all devices - unified approach
     if (!backgroundMusic) {
-        backgroundMusic = new Audio('tappaja1.mp3');
+        backgroundMusic = new Audio('tappaja.mp3');
         backgroundMusic.loop = true;
         backgroundMusic.volume = 0.5;
         backgroundMusic.preload = 'auto'; // Ensure full preload
@@ -1067,7 +1067,7 @@ function initializeMusic() {
         // Set up seamless looping by detecting near-end
 		backgroundMusic.addEventListener('timeupdate', function() {
 			// If we're within 1 second of the end, restart earlier for seamless loop
-			if (this.duration - this.currentTime < 2.0) {
+			if (this.duration - this.currentTime < 10.0) {
 				this.currentTime = 0;
 			}
 		});
@@ -1627,9 +1627,24 @@ function restartGame() {
 
 			// Handle active laser pattern
 			if (boss.laserActive) {
-				// Increase angle for rotation with direction
-				boss.laserAngle += boss.laserRotationSpeed * boss.laserRotationDirection;
-				boss.laserRotations += boss.laserRotationSpeed; // Always positive for tracking total rotation
+				// Calculate how long the laser has been active
+				const laserActiveTime = now - (boss.laserStartupTimer + boss.laserStartupDuration);
+				const accelerationDuration = 1000; // 1 second to reach full speed
+				
+				// Calculate rotation speed with acceleration
+				let currentRotationSpeed;
+				if (laserActiveTime < accelerationDuration) {
+					// Slow start for first second (start at 30% speed, ramp up to full)
+					const progress = laserActiveTime / accelerationDuration;
+					currentRotationSpeed = boss.laserRotationSpeed * (0.3 + 0.7 * progress);
+				} else {
+					// Full speed after 1 second
+					currentRotationSpeed = boss.laserRotationSpeed;
+				}
+				
+				// Increase angle for rotation with direction and acceleration
+				boss.laserAngle += currentRotationSpeed * boss.laserRotationDirection;
+				boss.laserRotations += currentRotationSpeed; // Always positive for tracking total rotation
 				
 				// Check if we've completed two full rotations
 				if (boss.laserRotations >= boss.laserRotationLimit) {
@@ -3103,16 +3118,29 @@ function update() {
 				// Shield absorbs the laser hit
 				shieldActive = false;
 				createExplosion(player.x, player.y, 0.8); // Shield break effect
+				
+				// Screen flash for shield break
+				ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
 			} else {
 				// No shield, take damage normally
 				player.hp -= boss.laserDamage;
 				hpElement.textContent = player.hp;
+				
+				// Severe visual feedback for laser damage
+				// Red screen flash
+				ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				
+				// Screen shake effect
+				canvas.style.transform = `translate(${(Math.random() - 0.5) * 10}px, ${(Math.random() - 0.5) * 10}px)`;
+				setTimeout(() => {
+					canvas.style.transform = 'translate(0px, 0px)';
+				}, 100);
 			}
 			
-			// Visual feedback for being hit by laser
-			if (Math.random() < 0.2) { // Only show explosion occasionally to avoid too many effects
-				createExplosion(player.x, player.y, 0.3);
-			}
+			// Always create explosion for laser hits
+			createExplosion(player.x, player.y, 0.5);
 			
 			// Check for player death
 			if (player.hp <= 0) {
@@ -3167,7 +3195,7 @@ function update() {
 			
 			// Add upward offset on mobile to keep player visible above thumb
 			if (isMobile) {
-				targetY = mouseY - 40; // Move player 40 pixels above touch point
+				targetY = mouseY - 50; // Move player 80 pixels above touch point
 			}
 			
 			// Smoothly interpolate toward target position
