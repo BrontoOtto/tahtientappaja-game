@@ -1707,20 +1707,66 @@ function restartGame() {
 			
 			// Check for player collision with boss using adjusted hitbox
 			if (checkCollision({
-				x: boss.x - boss.width/2,
-				y: boss.y - boss.height/2,
-				width: boss.width,
-				height: boss.height
+			    x: boss.x - boss.width/2,
+			    y: boss.y - boss.height/2,
+			    width: boss.width,
+			    height: boss.height
 			}, {
-				x: player.x - playerHitboxSize/2,
-				y: player.y - playerHitboxSize/2,
-				width: playerHitboxSize,
-				height: playerHitboxSize
+			    x: player.x - playerHitboxSize/2,
+			    y: player.y - playerHitboxSize/2,
+			    width: playerHitboxSize,
+			    height: playerHitboxSize
 			})) {
-				player.hp -= 20;
-				if (player.hp <= 0) {
-					endGame();
-				}
+			    // Create explosion at collision point
+			    createExplosion(player.x, player.y, 1.0);
+			    
+			    // Calculate direction vector from boss to player
+			    const dx = player.x - boss.x;
+			    const dy = player.y - boss.y;
+			    
+			    // Calculate length of direction vector
+			    const length = Math.sqrt(dx * dx + dy * dy);
+			    
+			    if (length > 0) {
+			        // Normalize and apply bounce force (150 pixels in the direction away from boss)
+			        const bounceForce = 150;
+			        const normalizedDx = dx / length;
+			        const normalizedDy = dy / length;
+			        
+			        // Set player position with bounce (ensure player stays on screen)
+			        const newX = player.x + normalizedDx * bounceForce;
+			        const newY = player.y + normalizedDy * bounceForce;
+			        
+			        // Keep player within screen bounds
+			        player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, newX));
+			        player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, newY));
+			    }
+			    
+			    // Check if shield is active
+			    if (shieldActive) {
+			        // Shield absorbs the hit
+			        shieldActive = false;
+			        createExplosion(player.x, player.y, 0.8); // Shield break effect
+			    } else {
+			        // No shield, take damage normally
+			        player.hp -= 20;
+			        hpElement.textContent = player.hp;
+			        
+			        // Visual feedback - red flash
+			        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+			        ctx.fillRect(0, 0, canvas.width, canvas.height);
+			    }
+			    
+			    if (player.hp <= 0) {
+			        endGame();
+			    }
+			    
+			    // Make player briefly invulnerable after boss collision (1 second)
+			    playerInvulnerable = true;
+			    playerInvulnerableTimer = now;
+			    setTimeout(() => {
+			        playerInvulnerable = false;
+			    }, 1000);
 			}
 		}
 
@@ -3211,12 +3257,22 @@ function update() {
 		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
 	}
     // Check invulnerability timer
-    if (playerInvulnerable) {
-        // Only remove invulnerability if player is ready
-        if (playerReady && Date.now() - playerInvulnerableTimer >= 3000) { // 3 seconds after player is ready
-            playerInvulnerable = false;
-        }
-    }
+	if (playerInvulnerable) {
+	    const now = Date.now();
+	    const elapsedTime = now - playerInvulnerableTimer;
+	    
+	    // Initial game start invulnerability (3 seconds)
+	    if (!gameStartSequence && playerReady && elapsedTime >= 3000) {
+	        // Initial 3-second invulnerability is over
+	        playerInvulnerable = false;
+	    }
+	    // Post-collision invulnerability (1 second)
+	    else if (elapsedTime >= 1000 && playerInvulnerableTimer > 0 && gameStartSequence === false) {
+	        // Collision-based invulnerability is over
+	        playerInvulnerable = false;
+	    }
+	    // Keep invulnerable during game start sequence
+	}
     
     // Update game elements
     updateBullets();
