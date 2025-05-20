@@ -486,6 +486,8 @@ function assetLoaded() {
 		let shieldActive = false;
 		let shieldHealth = 0;
 
+	    	let bossCollisionInvulnerability = false; // Special invulnerability only for boss collisions
+
 		// Powerup spawn rates (percentage chance when defeating an enemy)
 		const POWERUP_SPAWN_RATE = 0.05; // 5% chance to spawn any powerup
 		const POWERUP_TYPES = {
@@ -1742,31 +1744,34 @@ function restartGame() {
 			        player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, newY));
 			    }
 			    
-			    // Check if shield is active
-			    if (shieldActive) {
-			        // Shield absorbs the hit
-			        shieldActive = false;
-			        createExplosion(player.x, player.y, 0.8); // Shield break effect
-			    } else {
-			        // No shield, take damage normally
-			        player.hp -= 20;
-			        hpElement.textContent = player.hp;
-			        
-			        // Visual feedback - red flash
-			        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-			        ctx.fillRect(0, 0, canvas.width, canvas.height);
-			    }
+			    	// Check if shield is active
+				if (shieldActive) {
+				    // Shield absorbs the hit
+				    shieldActive = false;
+				    createExplosion(player.x, player.y, 0.8); // Shield break effect
+				} else {
+				    // No shield, take damage normally
+				    player.hp -= 20;
+				    hpElement.textContent = player.hp;
+				    
+				    // Visual feedback - red flash
+				    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+				    ctx.fillRect(0, 0, canvas.width, canvas.height);
+				    
+				    // Make player briefly invulnerable ONLY after boss collision (1 second)
+				    playerInvulnerable = true;
+				    playerInvulnerableTimer = Date.now();
+				    bossCollisionInvulnerability = true;
+				}
 			    
 			    if (player.hp <= 0) {
 			        endGame();
 			    }
 			    
-			    // Make player briefly invulnerable after boss collision (1 second)
-			    playerInvulnerable = true;
-			    playerInvulnerableTimer = now;
-			    setTimeout(() => {
-			        playerInvulnerable = false;
-			    }, 1000);
+			// Make player briefly invulnerable after boss collision (1 second)
+			playerInvulnerable = true;
+			playerInvulnerableTimer = now;
+			// Don't use setTimeout - we'll handle this with the timer check
 			}
 		}
 
@@ -3256,21 +3261,29 @@ function update() {
 		player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
 		player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
 	}
-    // Check invulnerability timer
+    	// Check invulnerability timer
 	if (playerInvulnerable) {
-	    const now = Date.now();
-	    const elapsedTime = now - playerInvulnerableTimer;
+	    const currentTime = Date.now();
+	    const elapsed = currentTime - playerInvulnerableTimer;
 	    
-	    // Initial game start invulnerability (3 seconds)
-	    if (!gameStartSequence && playerReady && elapsedTime >= 3000) {
-	        // Initial 3-second invulnerability is over
-	        playerInvulnerable = false;
+	    // Different invulnerability types
+	    if (gameStartSequence) {
+	        // Stay invulnerable during intro animation
 	    }
-	    // Post-collision invulnerability (1 second)
-	    else if (elapsedTime >= 1000 && playerInvulnerableTimer > 0 && gameStartSequence === false) {
-	        // Collision-based invulnerability is over
-	        playerInvulnerable = false;
+	    else if (bossCollisionInvulnerability) {
+	        // Boss collision invulnerability (0.8 seconds)
+	        if (elapsed >= 800) {
+	            playerInvulnerable = false;
+	            bossCollisionInvulnerability = false;
+	        }
 	    }
+	    else if (playerReady) {
+	        // Initial game invulnerability (3 seconds after player is ready)
+	        if (elapsed >= 3000) {
+	            playerInvulnerable = false;
+	        }
+	    }
+	}
 	    // Keep invulnerable during game start sequence
 	}
     
