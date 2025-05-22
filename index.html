@@ -839,8 +839,23 @@ document.addEventListener('DOMContentLoaded', function() {
 	document.addEventListener('touchmove', function(e) {
 		e.preventDefault();
 		e.stopPropagation();
+		e.stopImmediatePropagation();
 		return false;
-	}, { passive: false });
+	}, { passive: false, capture: true });
+
+	document.addEventListener('touchstart', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		e.stopImmediatePropagation();
+		return false;
+	}, { passive: false, capture: true });
+
+	document.addEventListener('touchend', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		e.stopImmediatePropagation();
+		return false;
+	}, { passive: false, capture: true });
 
 	document.addEventListener('touchstart', function(e) {
 		e.preventDefault();
@@ -3622,9 +3637,11 @@ function updatePlayerMovement() {
 		canvas.addEventListener('gesturestart', function(e) {
 			e.preventDefault();
 		});
-		// Add touch support - simplified version
+		// Add touch support - simplified version with aggressive scroll prevention
 		canvas.addEventListener('touchstart', (e) => {
 			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
 			
 			if (!playerReady) return;
 			
@@ -3634,10 +3651,14 @@ function updatePlayerMovement() {
 			// Set mouseX and mouseY from touch position
 			mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
 			mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
+			
+			return false;
 		}, { passive: false });
 
 		canvas.addEventListener('touchmove', (e) => {
 			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
 			
 			if (!playerReady) return;
 			
@@ -3647,7 +3668,9 @@ function updatePlayerMovement() {
 			// Update mouseX and mouseY from touch position
 			mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
 			mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
-		}, { passive: false });
+			
+			return false;
+		}, { passive: false });;
 
 		// Can remove touchend handler or simplify it
 		canvas.addEventListener('touchend', (e) => {
