@@ -835,38 +835,21 @@ document.addEventListener('DOMContentLoaded', function() {
         lockScreenOrientation();
     }
 	
-	// Prevent page scrolling on mobile - more aggressive approach
+	// Prevent page scrolling on mobile - only during gameplay
 	document.addEventListener('touchmove', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		e.stopImmediatePropagation();
-		return false;
-	}, { passive: false, capture: true });
-
-	document.addEventListener('touchstart', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		e.stopImmediatePropagation();
-		return false;
-	}, { passive: false, capture: true });
-
-	document.addEventListener('touchend', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		e.stopImmediatePropagation();
-		return false;
-	}, { passive: false, capture: true });
-
-	document.addEventListener('touchstart', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		return false;
+		if (isGameRunning && e.target === canvas) {
+			e.preventDefault();
+			e.stopPropagation();
+			return false;
+		}
 	}, { passive: false });
 
-	document.addEventListener('touchend', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		return false;
+	document.addEventListener('touchstart', function(e) {
+		if (isGameRunning && e.target === canvas) {
+			e.preventDefault();
+			e.stopPropagation();
+			return false;
+		}
 	}, { passive: false });
 
 	// Prevent scroll on mouse wheel
@@ -3637,11 +3620,9 @@ function updatePlayerMovement() {
 		canvas.addEventListener('gesturestart', function(e) {
 			e.preventDefault();
 		});
-		// Add touch support - simplified version with aggressive scroll prevention
+		// Add touch support - simplified version
 		canvas.addEventListener('touchstart', (e) => {
 			e.preventDefault();
-			e.stopPropagation();
-			e.stopImmediatePropagation();
 			
 			if (!playerReady) return;
 			
@@ -3651,14 +3632,10 @@ function updatePlayerMovement() {
 			// Set mouseX and mouseY from touch position
 			mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
 			mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
-			
-			return false;
 		}, { passive: false });
 
 		canvas.addEventListener('touchmove', (e) => {
 			e.preventDefault();
-			e.stopPropagation();
-			e.stopImmediatePropagation();
 			
 			if (!playerReady) return;
 			
@@ -3668,9 +3645,7 @@ function updatePlayerMovement() {
 			// Update mouseX and mouseY from touch position
 			mouseX = (touch.clientX - rect.left) * (canvas.width / rect.width);
 			mouseY = (touch.clientY - rect.top) * (canvas.height / rect.height);
-			
-			return false;
-		}, { passive: false });;
+		}, { passive: false });
 
 		// Can remove touchend handler or simplify it
 		canvas.addEventListener('touchend', (e) => {
