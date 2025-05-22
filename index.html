@@ -36,38 +36,41 @@
 			left: 0;
 			width: 100%;
 			height: 100%;
-			padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 10px) env(safe-area-inset-bottom, 10px) env(safe-area-inset-left, 10px);
 			background: rgba(16, 22, 78, 0.4);
 			color: white;
 			text-align: center;
 			z-index: 100;
 			display: none;
 			box-sizing: border-box;
-			/* Add flex layout to position content */
-			display: none;
 			flex-direction: column;
 			justify-content: center;
 			align-items: center;
-			/* Better safe area handling */
-			padding-top: max(env(safe-area-inset-top, 10px), 20px);
-			padding-bottom: max(env(safe-area-inset-bottom, 10px), 20px);
-			/* Ensure content fits */
+			/* Better viewport handling */
 			min-height: 100vh;
-			min-height: 100dvh; /* Dynamic viewport height for mobile */
+			min-height: 100dvh;
+			min-height: 100svh; /* Small viewport height for mobile */
+			/* Safe area padding */
+			padding: max(env(safe-area-inset-top), 10px) max(env(safe-area-inset-right), 10px) max(env(safe-area-inset-bottom), 20px) max(env(safe-area-inset-left), 10px);
+			/* Prevent content overflow */
+			overflow-y: auto;
+			overflow-x: hidden;
 		}
 	
 	/* Add responsive sizing classes */
 	.responsive-container {
 		width: 100%;
-		max-width: 400px;
+		max-width: min(400px, 90vw);
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		gap: clamp(5px, 2vh, 15px); /* Responsive gap */
-		padding: 10px; /* Add some padding */
+		gap: clamp(8px, 2.5vh, 20px);
+		padding: clamp(10px, 3vw, 20px);
 		box-sizing: border-box;
+		/* Ensure container scales properly */
+		min-height: 0;
+		flex-shrink: 1;
 	}
 	
 	.screen img, .screen canvas {
@@ -79,14 +82,20 @@
 	/* Add specific spacing for elements */
 	.logo-img {
 		max-width: 90%;
-		max-height: 15vh; /* Reduced from 20vh */
-		margin-bottom: 5px; /* Reduced margin */
+		max-height: clamp(60px, 12vh, 120px);
+		width: auto;
+		height: auto;
+		margin-bottom: clamp(5px, 1vh, 10px);
+		object-fit: contain;
 	}
 
 	.character-anim {
 		max-width: 80%;
-		max-height: 25vh; /* Reduced from 30vh */
-		margin-bottom: 5px; /* Reduced margin */
+		max-height: clamp(120px, 20vh, 200px);
+		width: auto;
+		height: auto;
+		margin-bottom: clamp(5px, 1vh, 10px);
+		object-fit: contain;
 	}
 	
 	.button-container {
@@ -3144,13 +3153,13 @@ function update() {
 	}
     
     // Stop spawning regular enemies at 185 seconds
-	if (gameTime >= 60 && !regularEnemiesDisabled) {
+	if (gameTime >= 185 && !regularEnemiesDisabled) {
 		regularEnemiesDisabled = true;
 		console.log("Regular enemies disabled at time: " + gameTime);
 	}
 
 	// Spawn boss at 190 seconds, without clearing existing enemies
-	if (gameTime >= 65 && !bossSpawned) {
+	if (gameTime >= 190 && !bossSpawned) {
 		// Spawn boss without clearing enemies
 		spawnBoss();
 		console.log("Boss spawned at time: " + gameTime);
@@ -3160,7 +3169,7 @@ function update() {
     updatePowerup();
     
     // Stop spawning regular enemies at 3:20 (200 seconds)
-    if (gameTime >= 200) {
+    if (gameTime >= 185) {
         regularEnemiesDisabled = true;
     }
     
