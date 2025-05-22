@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Tahtien Tappaja</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 	<meta http-equiv="ScreenOrientation" content="autoRotate:disabled">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="mobile-web-app-capable" content="yes">
@@ -256,10 +256,22 @@
 
 		/* Prevent address bar hiding in mobile browsers */
 		body {
-		    min-height: 100vh;
-		    min-height: 100dvh;
-		    max-height: 100vh;
-		    max-height: 100dvh;
+			min-height: 100vh;
+			min-height: 100dvh;
+			max-height: 100vh;
+			max-height: 100dvh;
+			/* Force viewport height to be stable */
+			height: 100vh !important;
+			height: 100dvh !important;
+		}
+
+		/* Force stable viewport for game canvas */
+		#gameCanvas {
+			position: fixed !important;
+			top: 0 !important;
+			left: 50% !important;
+			transform: translateX(-50%) !important;
+			z-index: 1 !important;
 		}
 
 		/* Additional mobile browser fixes */
@@ -816,6 +828,24 @@ function loadAllAssets() {
 // Add this at the end of your script block
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM loaded, initializing game...");
+    
+    // Force stable viewport height for DuckDuckGo and other mobile browsers
+    function lockViewport() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        
+        // Force the same height consistently
+        document.body.style.height = `${window.innerHeight}px`;
+        document.documentElement.style.height = `${window.innerHeight}px`;
+    }
+
+    // Lock viewport on load and orientation change
+    window.addEventListener('load', lockViewport);
+    window.addEventListener('resize', lockViewport);
+    window.addEventListener('orientationchange', lockViewport);
+
+    // Call immediately
+    lockViewport();
     
     // Force audio context creation to allow immediate playback later
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
