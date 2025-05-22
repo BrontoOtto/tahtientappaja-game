@@ -3310,9 +3310,17 @@ function update() {
 	} else {
 		// Normal touch/mouse follow controls
 		if (typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
-			// Smoothly interpolate toward touch/mouse position
-			player.x = player.x + (mouseX - player.x) * 0.2;
-			player.y = player.y + (mouseY - player.y) * 0.2;
+			let targetX = mouseX;
+			let targetY = mouseY;
+			
+			// Add offset for mobile to prevent finger blocking player
+			if (isMobile) {
+				targetY -= 40; // Move player 40 pixels above finger position
+			}
+			
+			// Smoothly interpolate toward touch/mouse position (with mobile offset)
+			player.x = player.x + (targetX - player.x) * 0.2;
+			player.y = player.y + (targetY - player.y) * 0.2;
 		}
 	}
 		
